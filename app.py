@@ -10,7 +10,7 @@ bot.load_devices()
 bot_thread = None
 
 USERNAME = "admin"
-PASSWORD = "1234"
+PASSWORD = "2026Money$"
 
 # ===== LOGIN =====
 @app.route("/", methods=["GET","POST"])
