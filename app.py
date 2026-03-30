@@ -6,10 +6,12 @@ import os
 app = Flask(__name__)
 app.secret_key = "secret123"
 
-bot.load_devices()
+# 🔥 INIT DB (IMPORTANT)
+bot.init_db()
+
 bot_thread = None
 
-# LOGIN (avec variables Render)
+# 🔐 LOGIN (Render env)
 USERNAME = os.environ.get("USERNAME", "admin")
 PASSWORD = os.environ.get("PASSWORD", "1234")
 
@@ -57,68 +59,53 @@ def resume():
 # ===== STATS =====
 @app.route("/stats")
 def stats():
-    return {"success":bot.SUCCESS_COUNT,"fail":bot.FAIL_COUNT}
+    return {
+        "success": bot.SUCCESS_COUNT,
+        "fail": bot.FAIL_COUNT
+    }
 
+# ===== HISTORY (simple) =====
 @app.route("/history")
 def history():
-    return {"data":bot.HISTORY[-50:]}
+    return {"data": []}  # tu peux améliorer après
 
-# ===== DEVICES =====
+# ===== DEVICES (SQLITE) =====
 @app.route("/devices")
 def devices():
-    return {"devices":bot.DEVICES}
+    return {"devices": bot.get_devices()}
 
-# 🔥 FIX ADD DEVICE (BUG 'name')
 @app.route("/add_device", methods=["POST"])
 def add_device():
     try:
-        data = request.get_json(force=True)
+        d = request.get_json(force=True)
 
-        print("📥 DATA REÇUE:", data)
-
-        name = data.get("name")
-        device_id = data.get("device_id")
-        username = data.get("username")
-        password = data.get("password")
-
-        if not name or not device_id:
-            return {"status": "error", "message": "missing fields"}
-
-        bot.DEVICES.append({
-            "name": name,
-            "device_id": device_id,
-            "username": username,
-            "password": password,
-            "active": True,
-            "success": 0,
-            "fail": 0,
-            "sent": 0
-        })
-
-        bot.save_devices()
-
-        print("✅ DEVICE AJOUTÉ")
+        bot.add_device(
+            d["name"],
+            d["device_id"],
+            d["username"],
+            d["password"]
+        )
 
         return {"status":"ok"}
 
     except Exception as e:
-        print("❌ ERROR ADD DEVICE:", e)
+        print("❌ ADD DEVICE ERROR:", e)
         return {"status":"error","message":str(e)}
 
 @app.route("/delete_device", methods=["POST"])
 def delete_device():
-    name=request.json["name"]
-    bot.DEVICES=[d for d in bot.DEVICES if d["name"]!=name]
-    bot.save_devices()
+    bot.delete_device(request.json["name"])
     return {"status":"ok"}
 
 @app.route("/toggle_device", methods=["POST"])
 def toggle():
-    name=request.json["name"]
-    for d in bot.DEVICES:
-        if d["name"]==name:
-            d["active"]=not d["active"]
-    bot.save_devices()
+    name = request.json["name"]
+    devices = bot.get_devices()
+
+    for d in devices:
+        if d["name"] == name:
+            bot.update_device(name, "active", 0 if d["active"] else 1)
+
     return {"status":"ok"}
 
 # ===== MESSAGE =====
@@ -130,20 +117,22 @@ def set_message():
 # ===== SETTINGS =====
 @app.route("/set_settings", methods=["POST"])
 def settings():
-    data=request.json
-    bot.DELAY=float(data["delay"])
-    bot.PAUSE_EVERY=int(data["pause_every"])
-    bot.PAUSE_TIME=int(data["pause_time"])
+    data = request.json
+    bot.DELAY = float(data["delay"])
+    bot.PAUSE_EVERY = int(data["pause_every"])
+    bot.PAUSE_TIME = int(data["pause_time"])
     return {"status":"ok"}
 
 # ===== UPLOAD =====
 @app.route("/upload", methods=["POST"])
 def upload():
-    file=request.files["file"]
+    file = request.files["file"]
+
     if file:
         os.makedirs("uploads", exist_ok=True)
         file.save("uploads/contacts.csv")
         return {"status":"ok"}
+
     return {"status":"fail"}
 
 # ===== RUN (Render compatible) =====
