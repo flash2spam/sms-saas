@@ -9,9 +9,9 @@ app.secret_key = "secret123"
 bot.load_devices()
 bot_thread = None
 
-import os
-USERNAME = os.environ.get("USERNAME", "papa")
-PASSWORD = os.environ.get("PASSWORD", "2026Money$")
+# LOGIN (avec variables Render)
+USERNAME = os.environ.get("USERNAME", "admin")
+PASSWORD = os.environ.get("PASSWORD", "1234")
 
 # ===== LOGIN =====
 @app.route("/", methods=["GET","POST"])
@@ -68,17 +68,36 @@ def history():
 def devices():
     return {"devices":bot.DEVICES}
 
+# 🔥 FIX ADD DEVICE (BUG 'name')
 @app.route("/add_device", methods=["POST"])
 def add_device():
     try:
-        d = request.json
+        data = request.get_json(force=True)
 
-        bot.add_device(
-            d["name"],
-            d["device_id"],
-            d["username"],
-            d["password"]
-        )
+        print("📥 DATA REÇUE:", data)
+
+        name = data.get("name")
+        device_id = data.get("device_id")
+        username = data.get("username")
+        password = data.get("password")
+
+        if not name or not device_id:
+            return {"status": "error", "message": "missing fields"}
+
+        bot.DEVICES.append({
+            "name": name,
+            "device_id": device_id,
+            "username": username,
+            "password": password,
+            "active": True,
+            "success": 0,
+            "fail": 0,
+            "sent": 0
+        })
+
+        bot.save_devices()
+
+        print("✅ DEVICE AJOUTÉ")
 
         return {"status":"ok"}
 
@@ -127,6 +146,6 @@ def upload():
         return {"status":"ok"}
     return {"status":"fail"}
 
-# ===== RUN =====
+# ===== RUN (Render compatible) =====
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
