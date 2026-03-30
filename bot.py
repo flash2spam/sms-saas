@@ -29,27 +29,40 @@ FILE = "devices.json"
 def load_devices():
     global DEVICES
     if os.path.exists(FILE):
-        with open(FILE, "r") as f:
-            DEVICES = json.load(f)
+        try:
+            with open(FILE, "r") as f:
+                DEVICES = json.load(f)
+        except:
+            DEVICES = []
 
 # ===== SAVE =====
 def save_devices():
     with open(FILE, "w") as f:
         json.dump(DEVICES, f)
 
-# ===== ADD DEVICE =====
+# ===== ADD DEVICE (FIX ERROR 500) =====
 def add_device(name, device_id, username, password):
-    DEVICES.append({
-        "name": name,
-        "device_id": device_id,
-        "username": username,
-        "password": password,
-        "active": True,
-        "success": 0,
-        "fail": 0,
-        "sent": 0
-    })
-    save_devices()
+    try:
+        global DEVICES
+
+        device = {
+            "name": name,
+            "device_id": device_id,
+            "username": username,
+            "password": password,
+            "active": True,
+            "success": 0,
+            "fail": 0,
+            "sent": 0
+        }
+
+        DEVICES.append(device)
+        save_devices()
+
+        print("✅ Device ajouté:", device)
+
+    except Exception as e:
+        print("❌ ERREUR ADD DEVICE:", e)
 
 def get_active_devices():
     return [d for d in DEVICES if d["active"]]
@@ -58,7 +71,7 @@ def get_active_devices():
 def main():
     global SUCCESS_COUNT, FAIL_COUNT
 
-    load_devices()  # 🔥 reload devices
+    load_devices()
 
     file_path = "uploads/contacts.csv"
 
@@ -87,16 +100,12 @@ def main():
         device = devices[index % len(devices)]
         index += 1
 
-        # 🔥 FIX champs manquants (IMPORTANT)
-        if "sent" not in device:
-            device["sent"] = 0
-        if "success" not in device:
-            device["success"] = 0
-        if "fail" not in device:
-            device["fail"] = 0
+        # sécurité
+        device.setdefault("sent", 0)
+        device.setdefault("success", 0)
+        device.setdefault("fail", 0)
 
         phone = row.get("phone")
-
         if not phone:
             continue
 
@@ -119,7 +128,6 @@ def main():
 
             print("📨", phone, "|", response.status_code)
 
-            # ✅ SUCCESS si code < 300
             if response.status_code < 300:
                 SUCCESS_COUNT += 1
                 device["success"] += 1
@@ -145,12 +153,9 @@ def main():
             FAIL_COUNT += 1
             device["fail"] += 1
 
-        # ⏸️ pause automatique
         if device["sent"] % PAUSE_EVERY == 0:
             print(f"⏸️ Pause {PAUSE_TIME}s")
             time.sleep(PAUSE_TIME)
 
         save_devices()
-
-        # ⏱️ délai entre SMS
         time.sleep(DELAY)
