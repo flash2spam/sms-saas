@@ -1,14 +1,404 @@
 <!DOCTYPE html>
-<html>
-<body style="background:#0f172a;color:white;text-align:center;font-family:Arial">
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SMS Gate — Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 
-<h2>🔐 Login</h2>
+<style>
+:root {
+  --bg: #080b12;
+  --surface: #0d1117;
+  --border: #1a2332;
+  --border-bright: #243044;
+  --accent: #00d4ff;
+  --accent-dim: rgba(0, 212, 255, 0.12);
+  --accent-glow: rgba(0, 212, 255, 0.35);
+  --text: #e8edf5;
+  --text-muted: #4a5568;
+  --text-dim: #8899aa;
+  --success: #00ff88;
+  --danger: #ff4466;
+}
 
-<form method="POST">
-<input name="username" placeholder="Username"><br><br>
-<input name="password" type="password" placeholder="Password"><br><br>
-<button type="submit">Login</button>
-</form>
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
+body {
+  font-family: 'DM Mono', monospace;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+}
+
+/* GRID BACKGROUND */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 48px 48px;
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+/* GLOW ORBS */
+body::after {
+  content: '';
+  position: fixed;
+  top: -200px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(0,212,255,0.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* CORNER MARKS */
+.corner {
+  position: fixed;
+  width: 20px;
+  height: 20px;
+  border-color: var(--border-bright);
+  border-style: solid;
+  opacity: 0.6;
+}
+.corner.tl { top: 24px; left: 24px; border-width: 1px 0 0 1px; }
+.corner.tr { top: 24px; right: 24px; border-width: 1px 1px 0 0; }
+.corner.bl { bottom: 24px; left: 24px; border-width: 0 0 1px 1px; }
+.corner.br { bottom: 24px; right: 24px; border-width: 0 1px 1px 0; }
+
+/* STATUS BAR TOP */
+.status-bar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  animation: scan 3s ease-in-out infinite;
+}
+
+@keyframes scan {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+/* MAIN CARD */
+.login-wrapper {
+  position: relative;
+  width: 420px;
+  animation: fadeUp 0.6s ease forwards;
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+@keyframes fadeUp {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* BRAND */
+.brand {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.brand-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.brand-icon {
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  background: var(--accent-dim);
+  box-shadow: 0 0 20px var(--accent-glow);
+}
+
+.brand-name {
+  font-family: 'Syne', sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: var(--text);
+}
+
+.brand-name span {
+  color: var(--accent);
+}
+
+.brand-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+
+/* CARD */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border-bright);
+  border-radius: 12px;
+  padding: 36px;
+  position: relative;
+  box-shadow: 0 0 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.02);
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 24px; right: 24px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent-glow), transparent);
+}
+
+.card-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.card-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 32px;
+}
+
+/* FORM */
+.field {
+  margin-bottom: 20px;
+}
+
+.field label {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+
+.input-wrap {
+  position: relative;
+}
+
+.input-wrap .icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  opacity: 0.5;
+}
+
+.field input {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border-bright);
+  border-radius: 8px;
+  padding: 12px 14px 12px 40px;
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.field input::placeholder { color: var(--text-muted); }
+
+.field input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+/* SUBMIT */
+.btn-submit {
+  width: 100%;
+  padding: 13px;
+  background: var(--accent);
+  color: #000;
+  border: none;
+  border-radius: 8px;
+  font-family: 'Syne', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  cursor: pointer;
+  margin-top: 8px;
+  position: relative;
+  overflow: hidden;
+  transition: opacity 0.2s, transform 0.1s, box-shadow 0.2s;
+}
+
+.btn-submit:hover {
+  opacity: 0.9;
+  box-shadow: 0 0 30px var(--accent-glow);
+}
+
+.btn-submit:active { transform: scale(0.99); }
+
+.btn-submit::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  animation: shimmer 2.5s infinite;
+}
+
+@keyframes shimmer {
+  to { left: 200%; }
+}
+
+/* ERROR */
+.error-msg {
+  background: rgba(255, 68, 102, 0.1);
+  border: 1px solid rgba(255, 68, 102, 0.3);
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 12px;
+  color: var(--danger);
+  margin-bottom: 20px;
+  display: none;
+}
+
+.error-msg.show { display: block; }
+
+/* FOOTER */
+.footer {
+  text-align: center;
+  margin-top: 24px;
+  font-size: 11px;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+}
+
+.footer span {
+  color: var(--accent);
+  opacity: 0.7;
+}
+
+/* SYSTEM INFO */
+.sys-info {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  font-size: 10px;
+  color: var(--text-muted);
+  text-align: right;
+  line-height: 1.8;
+  opacity: 0.5;
+}
+
+.sys-info .dot {
+  display: inline-block;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--success);
+  margin-right: 6px;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+</style>
+</head>
+
+<body>
+<div class="status-bar"></div>
+<div class="corner tl"></div>
+<div class="corner tr"></div>
+<div class="corner bl"></div>
+<div class="corner br"></div>
+
+<div class="login-wrapper">
+  <div class="brand">
+    <div class="brand-logo">
+      <div class="brand-icon">📡</div>
+      <div class="brand-name">SMS<span>Gate</span></div>
+    </div>
+    <div class="brand-sub">Control Panel v2.0</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Connexion</div>
+    <div class="card-sub">Accès réservé aux opérateurs autorisés</div>
+
+    <div class="error-msg" id="error-msg">
+      ⚠ Identifiants incorrects. Réessayez.
+    </div>
+
+    <form method="POST" onsubmit="handleSubmit(event)">
+      <div class="field">
+        <label>Identifiant</label>
+        <div class="input-wrap">
+          <span class="icon">◈</span>
+          <input type="text" name="username" placeholder="Votre identifiant" autocomplete="username" required>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Mot de passe</label>
+        <div class="input-wrap">
+          <span class="icon">◉</span>
+          <input type="password" name="password" placeholder="••••••••••" autocomplete="current-password" required>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-submit">ACCÉDER AU PANEL →</button>
+    </form>
+  </div>
+
+  <div class="footer">
+    Système sécurisé · <span>Chiffrement actif</span>
+  </div>
+</div>
+
+<div class="sys-info">
+  <div><span class="dot"></span>Système opérationnel</div>
+  <div id="sys-time"></div>
+</div>
+
+<script>
+// Show error if redirected with ?error=1
+if (window.location.search.includes('error')) {
+  document.getElementById('error-msg').classList.add('show')
+}
+
+function handleSubmit(e) {
+  const btn = e.target.querySelector('.btn-submit')
+  btn.textContent = 'Vérification...'
+  btn.style.opacity = '0.7'
+}
+
+// Clock
+function updateTime() {
+  const now = new Date()
+  document.getElementById('sys-time').textContent =
+    now.toLocaleDateString('fr-CA') + ' · ' +
+    now.toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+}
+setInterval(updateTime, 1000)
+updateTime()
+</script>
 </body>
 </html>
