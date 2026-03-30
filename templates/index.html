@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>SaaS PRO</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body{margin:0;background:#0f172a;color:white;font-family:Arial;display:flex}
+.sidebar{width:200px;background:#020617;padding:20px}
+.main{flex:1;padding:20px}
+.card{background:#1e293b;padding:20px;border-radius:10px;margin:10px;display:inline-block;width:200px}
+button{background:#3b82f6;border:none;padding:10px;border-radius:5px;color:white;cursor:pointer;margin-top:5px}
+input,textarea{padding:8px;margin:5px;border-radius:5px;border:none;width:250px}
+</style>
+</head>
+
+<body>
+
+<div class="sidebar">
+<h2>🚀 SaaS</h2>
+<a href="/logout" style="color:white">Logout</a>
+</div>
+
+<div class="main">
+
+<h1>Dashboard</h1>
+
+<div class="card">Success <p id="success">0</p></div>
+<div class="card">Fail <p id="fail">0</p></div>
+
+<canvas id="chart"></canvas>
+
+<h2>📱 Devices</h2>
+<div id="devices"></div>
+
+<h2>➕ Ajouter device</h2>
+
+<input id="name" placeholder="Nom">
+<input id="device_id" placeholder="Device ID">
+<input id="username" placeholder="Username">
+<input id="password" placeholder="Password">
+<br>
+<button onclick="addDevice()">Ajouter</button>
+
+<h2>💬 Message</h2>
+<textarea id="message" placeholder="Ton message..."></textarea><br>
+<button onclick="saveMessage()">💾 Sauvegarder message</button>
+
+<h2>⚙️ Réglages</h2>
+
+<label>Delay (secondes)</label><br>
+<input id="delay" value="2"><br>
+
+<label>Pause chaque X SMS</label><br>
+<input id="pause_every" value="10"><br>
+
+<label>Durée pause (secondes)</label><br>
+<input id="pause_time" value="30"><br>
+
+<button onclick="saveSettings()">💾 Sauvegarder réglages</button>
+
+<h2>📁 Upload CSV</h2>
+<form id="uploadForm">
+<input type="file" name="file">
+<button>Upload</button>
+</form>
+
+<br>
+
+<button onclick="start()">Start</button>
+<button onclick="pause()">Pause</button>
+<button onclick="resume()">Resume</button>
+
+<h2>📈 Historique</h2>
+<ul id="history"></ul>
+
+</div>
+
+<script>
+
+// ===== GRAPH =====
+let c=new Chart(document.getElementById("chart"),{
+type:"line",
+data:{labels:[],datasets:[
+{label:"success",data:[]},
+{label:"fail",data:[]}
+]}
+})
+
+// ===== STATS =====
+setInterval(()=>{
+fetch("/stats").then(r=>r.json()).then(d=>{
+document.getElementById("success").innerText=d.success
+document.getElementById("fail").innerText=d.fail
+
+c.data.labels.push("")
+c.data.datasets[0].data.push(d.success)
+c.data.datasets[1].data.push(d.fail)
+
+if(c.data.labels.length>20){
+c.data.labels.shift()
+c.data.datasets[0].data.shift()
+c.data.datasets[1].data.shift()
+}
+
+c.update()
+})
+},1000)
+
+// ===== DEVICES =====
+function loadDevices(){
+fetch("/devices").then(r=>r.json()).then(d=>{
+let html=""
+d.devices.forEach(x=>{
+html+=`<div class="card">
+<b>${x.name}</b><br>
+✅ ${x.success} | ❌ ${x.fail}<br>
+
+<button onclick="toggle('${x.name}')">${x.active?"ON":"OFF"}</button>
+<button onclick="deleteDevice('${x.name}')" style="background:red">❌</button>
+
+</div>`
+})
+document.getElementById("devices").innerHTML=html
+})
+}
+setInterval(loadDevices,2000)
+
+// ===== ADD DEVICE =====
+function addDevice(){
+fetch("/add_device",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({
+name:name.value,
+device_id:device_id.value,
+username:username.value,
+password:password.value
+})
+})
+.then(()=>loadDevices())
+}
+
+// ===== DELETE =====
+function deleteDevice(name){
+if(confirm("Supprimer ce téléphone ?")){
+fetch("/delete_device",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({name:name})
+})
+.then(()=>loadDevices())
+}
+}
+
+// ===== TOGGLE =====
+function toggle(n){
+fetch("/toggle_device",{method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({name:n})
+}).then(loadDevices)
+}
+
+// ===== MESSAGE =====
+function saveMessage(){
+fetch("/set_message",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({message:message.value})
+})
+.then(()=>alert("✅ Message sauvegardé"))
+}
+
+// ===== SETTINGS =====
+function saveSettings(){
+fetch("/set_settings",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({
+delay:delay.value,
+pause_every:pause_every.value,
+pause_time:pause_time.value
+})
+})
+.then(()=>alert("✅ Réglages sauvegardés"))
+}
+
+// ===== BOT =====
+function start(){fetch("/start",{method:"POST"})}
+function pause(){fetch("/pause",{method:"POST"})}
+function resume(){fetch("/resume",{method:"POST"})}
+
+// ===== UPLOAD =====
+document.getElementById("uploadForm").onsubmit=e=>{
+e.preventDefault()
+let fd=new FormData(e.target)
+fetch("/upload",{method:"POST",body:fd})
+}
+
+// ===== HISTORY =====
+setInterval(()=>{
+fetch("/history").then(r=>r.json()).then(d=>{
+let html=""
+d.data.forEach(x=>{
+html+=`<li>${x.device} → ${x.phone} (${x.status})</li>`
+})
+document.getElementById("history").innerHTML=html
+})
+},2000)
+
+</script>
+
+</body>
+</html>
