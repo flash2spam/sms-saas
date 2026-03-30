@@ -8,10 +8,11 @@ app.secret_key = "secret123"
 
 bot.load_devices()
 bot_thread = None
-import os
 
+import os
 USERNAME = os.environ.get("USERNAME", "papa")
 PASSWORD = os.environ.get("PASSWORD", "2026Money$")
+
 # ===== LOGIN =====
 @app.route("/", methods=["GET","POST"])
 def login():
@@ -33,7 +34,7 @@ def logout():
     session.clear()
     return redirect("/")
 
-# ===== BOT CONTROL =====
+# ===== BOT =====
 @app.route("/start", methods=["POST"])
 def start():
     global bot_thread
@@ -69,9 +70,21 @@ def devices():
 
 @app.route("/add_device", methods=["POST"])
 def add_device():
-    d=request.json
-    bot.add_device(d["name"],d["device_id"],d["username"],d["password"])
-    return {"status":"ok"}
+    try:
+        d = request.json
+
+        bot.add_device(
+            d["name"],
+            d["device_id"],
+            d["username"],
+            d["password"]
+        )
+
+        return {"status":"ok"}
+
+    except Exception as e:
+        print("❌ ERROR ADD DEVICE:", e)
+        return {"status":"error","message":str(e)}
 
 @app.route("/delete_device", methods=["POST"])
 def delete_device():
@@ -114,6 +127,6 @@ def upload():
         return {"status":"ok"}
     return {"status":"fail"}
 
-# ===== RENDER COMPATIBLE =====
+# ===== RUN =====
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
