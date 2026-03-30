@@ -8,12 +8,10 @@ app.secret_key = "secret123"
 
 bot.load_devices()
 bot_thread = None
-
 import os
 
 USERNAME = os.environ.get("USERNAME", "admin")
 PASSWORD = os.environ.get("PASSWORD", "1234")
-
 # ===== LOGIN =====
 @app.route("/", methods=["GET","POST"])
 def login():
