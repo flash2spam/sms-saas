@@ -10,8 +10,8 @@ bot.load_devices()
 bot_thread = None
 import os
 
-USERNAME = os.environ.get("USERNAME", "admin")
-PASSWORD = os.environ.get("PASSWORD", "1234")
+USERNAME = os.environ.get("USERNAME", "papa")
+PASSWORD = os.environ.get("PASSWORD", "2026Money$")
 # ===== LOGIN =====
 @app.route("/", methods=["GET","POST"])
 def login():
