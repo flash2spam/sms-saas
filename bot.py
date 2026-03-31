@@ -21,6 +21,7 @@ PAUSE_TIME = 30
 MESSAGE_TEXT = "🔥 Message depuis ton SaaS"
 
 DB = "data.db"
+CSV_PATH = "uploads/contacts.csv"
 
 
 # ===== INIT DB =====
@@ -112,7 +113,7 @@ def add_blacklist(phone):
         c.execute("INSERT INTO blacklist (phone) VALUES (?)", (phone,))
         conn.commit()
     except sqlite3.IntegrityError:
-        pass  # already in blacklist
+        pass
     conn.close()
 
 
@@ -167,24 +168,70 @@ def get_history(filter_status=None, limit=100):
     return [{"phone": r[0], "device": r[1], "status": r[2], "timestamp": r[3]} for r in rows]
 
 
+# ===== CSV HELPERS =====
+def remove_phone_from_csv(phone):
+    """Supprime un numéro du fichier CSV après envoi réussi."""
+    if not os.path.exists(CSV_PATH):
+        return
+    try:
+        with open(CSV_PATH, newline="", encoding="utf-8") as f:
+            rows = list(csv.DictReader(f))
+
+        remaining = [r for r in rows if r.get("phone", "").strip() != phone]
+
+        with open(CSV_PATH, "w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=["phone"])
+            writer.writeheader()
+            writer.writerows(remaining)
+
+        print(f"🗑️  {phone} retiré du CSV ({len(remaining)} restants)")
+    except Exception as e:
+        print(f"⚠️  Erreur suppression CSV: {e}")
+
+
+def delete_csv():
+    """Supprime complètement le fichier CSV."""
+    if os.path.exists(CSV_PATH):
+        os.remove(CSV_PATH)
+        print("🗑️  CSV supprimé")
+
+
+def csv_exists():
+    """Vérifie si un CSV est présent."""
+    return os.path.exists(CSV_PATH)
+
+
+def csv_count():
+    """Retourne le nombre de numéros restants dans le CSV."""
+    if not os.path.exists(CSV_PATH):
+        return 0
+    try:
+        with open(CSV_PATH, newline="", encoding="utf-8") as f:
+            return sum(1 for _ in csv.DictReader(f))
+    except Exception:
+        return 0
+
+
 # ===== MAIN BOT =====
 def main():
     global SUCCESS_COUNT, FAIL_COUNT
 
-    file_path = "uploads/contacts.csv"
-
-    if not os.path.exists(file_path):
+    if not os.path.exists(CSV_PATH):
         print("❌ Pas de CSV")
         return
 
-    with open(file_path, newline="", encoding="utf-8") as f:
+    # Lire TOUS les numéros au démarrage
+    with open(CSV_PATH, newline="", encoding="utf-8") as f:
         rows = list(csv.DictReader(f))
+
+    print(f"📋 {len(rows)} numéros chargés")
 
     index = 0
 
     for row in rows:
 
         if not running:
+            print("⛔ Bot arrêté")
             break
 
         while not pause_event.is_set():
@@ -204,7 +251,9 @@ def main():
             continue
 
         if is_blacklisted(phone):
-            print(f"🚫 {phone} blacklisté")
+            print(f"🚫 {phone} blacklisté — ignoré")
+            # Supprimer quand même du CSV pour ne plus le retraiter
+            remove_phone_from_csv(phone)
             continue
 
         try:
@@ -226,24 +275,31 @@ def main():
                 update_device(device["name"], "success", device["success"] + 1)
                 update_device(device["name"], "sent", device["sent"] + 1)
                 add_history(phone, device["name"], "success")
+
+                # ✅ Supprimer du CSV après envoi réussi (anti-doublon)
+                remove_phone_from_csv(phone)
+
             else:
                 FAIL_COUNT += 1
                 update_device(device["name"], "fail", device["fail"] + 1)
                 update_device(device["name"], "sent", device["sent"] + 1)
                 add_history(phone, device["name"], "fail")
+                # On NE supprime PAS en cas d'échec → sera retransmis si relancé
 
         except Exception as e:
             print(f"❌ ERREUR: {e}")
             FAIL_COUNT += 1
             add_history(phone, device["name"], "fail")
 
-        # Pause automatique
+        # Pause automatique par device
         current_device = get_devices()
         for d in current_device:
             if d["name"] == device["name"] and d["sent"] > 0 and d["sent"] % PAUSE_EVERY == 0:
-                print(f"⏸️ Pause {PAUSE_TIME}s après {PAUSE_EVERY} SMS")
+                print(f"⏸️  Pause {PAUSE_TIME}s après {PAUSE_EVERY} SMS")
                 time.sleep(PAUSE_TIME)
                 break
 
-        # Délai anti-ban (aléatoire)
+        # Délai anti-ban aléatoire
         time.sleep(random.uniform(DELAY, DELAY + 1.5))
+
+    print(f"✅ Campagne terminée — {SUCCESS_COUNT} envoyés, {FAIL_COUNT} erreurs")
