@@ -22,7 +22,7 @@ def login():
         if request.form.get("username") == USERNAME and request.form.get("password") == PASSWORD:
             session["logged"] = True
             return redirect("/dashboard")
-        return "❌ login incorrect"
+        return redirect("/?error=1")
     return render_template("login.html")
 
 
@@ -63,10 +63,21 @@ def resume():
     return {"status": "resumed"}
 
 
+@app.route("/stop", methods=["POST"])
+def stop():
+    bot.running = False
+    bot.pause_event.set()  # débloquer si en pause
+    return {"status": "stopped"}
+
+
 # ===== STATS =====
 @app.route("/stats")
 def stats():
-    return {"success": bot.SUCCESS_COUNT, "fail": bot.FAIL_COUNT}
+    return {
+        "success": bot.SUCCESS_COUNT,
+        "fail": bot.FAIL_COUNT,
+        "remaining": bot.csv_count()
+    }
 
 
 # ===== DEVICES =====
@@ -134,37 +145,63 @@ def upload():
         if not file:
             return {"status": "error", "message": "Aucun fichier"}
         os.makedirs("uploads", exist_ok=True)
-        file.save("uploads/contacts.csv")
-        print("✅ CSV uploadé")
-        return {"status": "ok"}
+        file.save(bot.CSV_PATH)
+        count = bot.csv_count()
+        print(f"✅ CSV uploadé — {count} contacts")
+        return {"status": "ok", "count": count}
     except Exception as e:
         print("❌ UPLOAD ERROR:", e)
         return {"status": "error", "message": str(e)}
 
 
+# ===== SUPPRIMER LE CSV =====
+@app.route("/delete_csv", methods=["POST"])
+def delete_csv():
+    try:
+        bot.delete_csv()
+        return {"status": "ok"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+# ===== STATUT CSV =====
+@app.route("/csv_status")
+def csv_status():
+    return {
+        "exists": bot.csv_exists(),
+        "count": bot.csv_count()
+    }
+
+
 # ===== CONTACTS =====
 @app.route("/contacts")
 def contacts():
-    path = "uploads/contacts.csv"
+    path = bot.CSV_PATH
     if not os.path.exists(path):
         return {"data": [], "count": 0}
-    with open(path, newline="", encoding="utf-8") as f:
-        rows = list(csv.DictReader(f))
-    return {"data": rows[:200], "count": len(rows)}  # max 200 affichés
+    try:
+        with open(path, newline="", encoding="utf-8") as f:
+            rows = list(csv.DictReader(f))
+        return {"data": rows[:200], "count": len(rows)}
+    except Exception:
+        return {"data": [], "count": 0}
 
 
 @app.route("/delete_contact", methods=["POST"])
 def delete_contact():
     phone = request.json["phone"]
-    path = "uploads/contacts.csv"
-    with open(path, newline="", encoding="utf-8") as f:
-        rows = list(csv.DictReader(f))
-    rows = [r for r in rows if r["phone"] != phone]
-    with open(path, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=["phone"])
-        writer.writeheader()
-        writer.writerows(rows)
-    return {"status": "ok"}
+    path = bot.CSV_PATH
+    try:
+        with open(path, newline="", encoding="utf-8") as f:
+            rows = list(csv.DictReader(f))
+        rows = [r for r in rows if r["phone"] != phone]
+        with open(path, "w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=["phone"])
+            writer.writeheader()
+            writer.writerows(rows)
+        return {"status": "ok"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
 
 # ===== BLACKLIST =====
@@ -192,7 +229,7 @@ def remove_blacklist():
 # ===== HISTORIQUE =====
 @app.route("/history")
 def history():
-    filter_status = request.args.get("filter")  # ?filter=success ou ?filter=fail
+    filter_status = request.args.get("filter")
     data = bot.get_history(filter_status=filter_status, limit=100)
     return {"data": data}
 
