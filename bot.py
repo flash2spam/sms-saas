@@ -20,6 +20,11 @@ PAUSE_TIME = 30
 
 MESSAGE_TEXT = "🔥 Message depuis ton SaaS"
 
+# ===== TEMPLATES DE MESSAGES =====
+# Chaque template doit contenir {message} pour insérer le message principal
+# Tu peux aussi utiliser {phone} pour le numéro du destinataire
+MESSAGE_TEMPLATES = []
+
 DB = "data.db"
 CSV_PATH = "uploads/contacts.csv"
 
@@ -60,8 +65,48 @@ def init_db():
     )
     """)
 
+    # Table pour stocker les templates de messages
+    c.execute("""
+    CREATE TABLE IF NOT EXISTS message_templates (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        content TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+
     conn.commit()
     conn.close()
+
+
+# ===== TEMPLATES =====
+def add_template(content):
+    conn = sqlite3.connect(DB)
+    c = conn.cursor()
+    c.execute("INSERT INTO message_templates (content) VALUES (?)", (content,))
+    conn.commit()
+    conn.close()
+
+def get_templates():
+    conn = sqlite3.connect(DB)
+    c = conn.cursor()
+    rows = c.execute("SELECT id, content, created_at FROM message_templates ORDER BY id DESC").fetchall()
+    conn.close()
+    return [{"id": r[0], "content": r[1], "created_at": r[2]} for r in rows]
+
+def delete_template(tid):
+    conn = sqlite3.connect(DB)
+    c = conn.cursor()
+    c.execute("DELETE FROM message_templates WHERE id=?", (tid,))
+    conn.commit()
+    conn.close()
+
+def get_random_message():
+    """Retourne un message aléatoire parmi les templates, ou le message par défaut."""
+    templates = get_templates()
+    if templates:
+        chosen = random.choice(templates)
+        return chosen["content"]
+    return MESSAGE_TEXT
 
 
 # ===== DEVICES =====
@@ -170,39 +215,32 @@ def get_history(filter_status=None, limit=100):
 
 # ===== CSV HELPERS =====
 def remove_phone_from_csv(phone):
-    """Supprime un numéro du fichier CSV après envoi réussi."""
     if not os.path.exists(CSV_PATH):
         return
     try:
         with open(CSV_PATH, newline="", encoding="utf-8") as f:
             rows = list(csv.DictReader(f))
-
         remaining = [r for r in rows if r.get("phone", "").strip() != phone]
-
         with open(CSV_PATH, "w", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=["phone"])
             writer.writeheader()
             writer.writerows(remaining)
-
         print(f"🗑️  {phone} retiré du CSV ({len(remaining)} restants)")
     except Exception as e:
         print(f"⚠️  Erreur suppression CSV: {e}")
 
 
 def delete_csv():
-    """Supprime complètement le fichier CSV."""
     if os.path.exists(CSV_PATH):
         os.remove(CSV_PATH)
         print("🗑️  CSV supprimé")
 
 
 def csv_exists():
-    """Vérifie si un CSV est présent."""
     return os.path.exists(CSV_PATH)
 
 
 def csv_count():
-    """Retourne le nombre de numéros restants dans le CSV."""
     if not os.path.exists(CSV_PATH):
         return 0
     try:
@@ -220,13 +258,13 @@ def main():
         print("❌ Pas de CSV")
         return
 
-    # Lire TOUS les numéros au démarrage
     with open(CSV_PATH, newline="", encoding="utf-8") as f:
         rows = list(csv.DictReader(f))
 
     print(f"📋 {len(rows)} numéros chargés")
 
     index = 0
+    session_sent = 0  # compteur pour délai adaptatif
 
     for row in rows:
 
@@ -252,9 +290,12 @@ def main():
 
         if is_blacklisted(phone):
             print(f"🚫 {phone} blacklisté — ignoré")
-            # Supprimer quand même du CSV pour ne plus le retraiter
             remove_phone_from_csv(phone)
             continue
+
+        # ===== ROTATION DU MESSAGE =====
+        message = get_random_message()
+        print(f"💬 Template utilisé: {message[:40]}...")
 
         try:
             r = requests.post(
@@ -262,7 +303,7 @@ def main():
                 json={
                     "device": device["device_id"],
                     "phoneNumbers": [phone],
-                    "message": MESSAGE_TEXT
+                    "message": message
                 },
                 auth=(device["username"], device["password"]),
                 timeout=30
@@ -272,34 +313,38 @@ def main():
 
             if r.status_code < 300:
                 SUCCESS_COUNT += 1
+                session_sent += 1
                 update_device(device["name"], "success", device["success"] + 1)
                 update_device(device["name"], "sent", device["sent"] + 1)
                 add_history(phone, device["name"], "success")
-
-                # ✅ Supprimer du CSV après envoi réussi (anti-doublon)
                 remove_phone_from_csv(phone)
-
             else:
                 FAIL_COUNT += 1
                 update_device(device["name"], "fail", device["fail"] + 1)
                 update_device(device["name"], "sent", device["sent"] + 1)
                 add_history(phone, device["name"], "fail")
-                # On NE supprime PAS en cas d'échec → sera retransmis si relancé
 
         except Exception as e:
             print(f"❌ ERREUR: {e}")
             FAIL_COUNT += 1
             add_history(phone, device["name"], "fail")
 
-        # Pause automatique par device
+        # ===== DÉLAI ADAPTATIF =====
+        # Pause longue toutes les PAUSE_EVERY SMS
         current_device = get_devices()
         for d in current_device:
             if d["name"] == device["name"] and d["sent"] > 0 and d["sent"] % PAUSE_EVERY == 0:
-                print(f"⏸️  Pause {PAUSE_TIME}s après {PAUSE_EVERY} SMS")
+                print(f"⏸️  Pause longue {PAUSE_TIME}s après {PAUSE_EVERY} SMS")
                 time.sleep(PAUSE_TIME)
                 break
 
-        # Délai anti-ban aléatoire
-        time.sleep(random.uniform(DELAY, DELAY + 1.5))
+        # Pause très longue toutes les 50 SMS (protection opérateur)
+        if session_sent > 0 and session_sent % 50 == 0:
+            extra = random.randint(120, 300)
+            print(f"🛡️  Anti-ban: pause {extra}s après 50 SMS")
+            time.sleep(extra)
+        else:
+            # Délai de base aléatoire
+            time.sleep(random.uniform(DELAY, DELAY + 1.5))
 
     print(f"✅ Campagne terminée — {SUCCESS_COUNT} envoyés, {FAIL_COUNT} erreurs")
