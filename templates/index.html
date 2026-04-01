@@ -274,6 +274,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
     <div class="nav-item" onclick="go('history',this)"><span class="nav-icon">≡</span><span class="nav-text">Historique</span></div>
     <div class="nav-group">Config</div>
     <div class="nav-item" onclick="go('message',this)"><span class="nav-icon">✎</span><span class="nav-text">Message</span></div>
+    <div class="nav-item" onclick="go('templates',this)"><span class="nav-icon">⊞</span><span class="nav-text">Templates</span></div>
     <div class="nav-item" onclick="go('settings',this)"><span class="nav-icon">⚙</span><span class="nav-text">Réglages</span></div>
   </nav>
   <div class="sidebar-footer">
@@ -495,6 +496,49 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
     </div>
   </div>
 
+  <!-- TEMPLATES -->
+  <div class="tab-section" id="tab-templates">
+    <div class="sec-header">
+      <div><div class="sec-title">Templates de messages</div><div class="sec-sub">Le bot pioche aléatoirement dans ces templates à chaque envoi — contourne les filtres opérateurs</div></div>
+    </div>
+
+    <!-- Info anti-ban -->
+    <div style="background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.2);border-radius:10px;padding:14px 18px;margin-bottom:16px;display:flex;gap:12px;align-items:flex-start">
+      <span style="font-size:18px;flex-shrink:0">🛡️</span>
+      <div>
+        <div style="font-size:12px;color:var(--accent);font-weight:600;margin-bottom:4px">Comment ça marche</div>
+        <div style="font-size:11px;color:var(--text-muted);line-height:1.7">
+          Chaque SMS envoyé utilise un template différent choisi aléatoirement. Les opérateurs détectent le spam par répétition du même texte — varier le contenu réduit drastiquement les blocages.<br>
+          <span style="color:var(--text-dim)">Si aucun template n'est ajouté, le message par défaut (section Message) est utilisé.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ajouter template -->
+    <div class="panel">
+      <div class="panel-title">Ajouter un template</div>
+      <div class="field">
+        <label class="field-label">Contenu du message</label>
+        <textarea class="input" id="tpl-txt" rows="4" placeholder="Ex: Bonjour, votre paiement Gigadat est disponible. Accédez ici: [lien]"></textarea>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">
+        <div style="font-size:11px;color:var(--text-muted)">Caractères : <span id="tpl-count" style="color:var(--accent)">0</span> / 160</div>
+        <button class="btn btn-primary" onclick="addTemplate()">+ Ajouter ce template</button>
+      </div>
+      <div class="progress-bar" style="margin-top:10px">
+        <div class="progress-fill" id="tpl-bar" style="width:0%"></div>
+      </div>
+    </div>
+
+    <!-- Liste templates -->
+    <div class="panel" id="tpl-list-wrap">
+      <div class="panel-title">Templates actifs <span id="tpl-count-badge" style="color:var(--accent)"></span></div>
+      <div id="tpl-list">
+        <div class="empty"><div class="empty-icon">⊞</div><div class="empty-text">Aucun template. Ajoutez-en au moins 3 pour une protection optimale.</div></div>
+      </div>
+    </div>
+  </div>
+
   <!-- SETTINGS -->
   <div class="tab-section" id="tab-settings">
     <div class="sec-header">
@@ -518,6 +562,10 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
     </div>
     <div class="panel">
       <div class="panel-title">Anti-ban (actif par défaut)</div>
+      <div class="settings-row">
+        <div><div class="s-label">Rotation des templates</div><div class="s-desc">Chaque SMS utilise un texte différent (anti-spam opérateur)</div></div>
+        <div><span class="badge badge-s">✓ Actif</span></div>
+      </div>
       <div class="settings-row">
         <div><div class="s-label">Délai aléatoire</div><div class="s-desc">Variation aléatoire ajoutée à chaque délai</div></div>
         <div><span class="badge badge-s">✓ Actif</span></div>
@@ -547,6 +595,7 @@ function go(name, el) {
   if(name==='contacts') { loadContacts(); loadCsvStatus() }
   if(name==='blacklist') loadBL()
   if(name==='history') loadHist()
+  if(name==='templates') loadTemplates()
 }
 
 // ─── TOAST ───
@@ -740,6 +789,53 @@ function loadHist(filter,el){
   })
 }
 
+// ─── TEMPLATES ───
+document.getElementById('tpl-txt').addEventListener('input',function(){
+  const len=this.value.length,pct=Math.min(len/160*100,100)
+  document.getElementById('tpl-count').textContent=len
+  document.getElementById('tpl-bar').style.width=pct+'%'
+  document.getElementById('tpl-bar').style.background=pct>90?'linear-gradient(90deg,var(--warn),var(--danger))':pct>70?'linear-gradient(90deg,var(--accent),var(--warn))':'linear-gradient(90deg,var(--accent),var(--success))'
+})
+
+function loadTemplates(){
+  fetch('/templates').then(r=>r.json()).then(d=>{
+    const badge=document.getElementById('tpl-count-badge')
+    badge.textContent='('+d.data.length+')'
+    if(!d.data.length){
+      document.getElementById('tpl-list').innerHTML='<div class="empty"><div class="empty-icon">⊞</div><div class="empty-text">Aucun template. Ajoutez-en au moins 3 pour une protection optimale.</div></div>'
+      return
+    }
+    document.getElementById('tpl-list').innerHTML=d.data.map(t=>`
+      <div style="background:var(--surface-2);border:1px solid var(--border-b);border-radius:8px;padding:12px 16px;margin-bottom:8px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+        <div style="flex:1">
+          <div style="font-size:12px;color:var(--text);line-height:1.6">${t.content}</div>
+          <div style="font-size:10px;color:var(--text-muted);margin-top:4px">${t.content.length} car. · Ajouté le ${(t.created_at||'').slice(0,10)}</div>
+        </div>
+        <button class="btn btn-danger" style="padding:4px 10px;font-size:11px;flex-shrink:0" onclick="delTemplate(${t.id})">✕</button>
+      </div>`).join('')
+  })
+}
+
+function addTemplate(){
+  const content=document.getElementById('tpl-txt').value.trim()
+  if(!content){toast('Entre un message','e');return}
+  fetch('/add_template',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({content})})
+  .then(r=>r.json()).then(res=>{
+    if(res.status==='ok'){
+      document.getElementById('tpl-txt').value=''
+      document.getElementById('tpl-count').textContent='0'
+      document.getElementById('tpl-bar').style.width='0%'
+      toast('✓ Template ajouté','s')
+      loadTemplates()
+    } else toast('❌ '+res.message,'e')
+  })
+}
+
+function delTemplate(id){
+  fetch('/delete_template',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})})
+  .then(()=>{toast('Template supprimé','i');loadTemplates()})
+}
+
 // ─── MESSAGE ───
 document.getElementById('msg-txt').addEventListener('input',function(){
   const len=this.value.length,pct=Math.min(len/160*100,100)
@@ -757,6 +853,7 @@ function saveSettings(){fetch('/set_settings',{method:'POST',headers:{'Content-T
 // ─── INIT ───
 loadDevices()
 loadCsvStatus()
+loadTemplates()
 </script>
 
 </body>
