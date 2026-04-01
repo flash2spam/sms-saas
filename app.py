@@ -66,7 +66,7 @@ def resume():
 @app.route("/stop", methods=["POST"])
 def stop():
     bot.running = False
-    bot.pause_event.set()  # débloquer si en pause
+    bot.pause_event.set()
     return {"status": "stopped"}
 
 
@@ -127,6 +127,30 @@ def set_message():
     return {"status": "ok"}
 
 
+# ===== TEMPLATES =====
+@app.route("/templates")
+def get_templates():
+    return {"data": bot.get_templates()}
+
+
+@app.route("/add_template", methods=["POST"])
+def add_template():
+    content = request.json.get("content", "").strip()
+    if not content:
+        return {"status": "error", "message": "Contenu vide"}
+    bot.add_template(content)
+    return {"status": "ok"}
+
+
+@app.route("/delete_template", methods=["POST"])
+def delete_template():
+    tid = request.json.get("id")
+    if not tid:
+        return {"status": "error", "message": "ID manquant"}
+    bot.delete_template(tid)
+    return {"status": "ok"}
+
+
 # ===== SETTINGS =====
 @app.route("/set_settings", methods=["POST"])
 def settings():
@@ -154,7 +178,6 @@ def upload():
         return {"status": "error", "message": str(e)}
 
 
-# ===== SUPPRIMER LE CSV =====
 @app.route("/delete_csv", methods=["POST"])
 def delete_csv():
     try:
@@ -164,7 +187,6 @@ def delete_csv():
         return {"status": "error", "message": str(e)}
 
 
-# ===== STATUT CSV =====
 @app.route("/csv_status")
 def csv_status():
     return {
