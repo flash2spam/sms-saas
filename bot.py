@@ -6,10 +6,10 @@ import csv
 import os
 import random
 
-pause_event = threading.Event()
-pause_event.set()
+pause_event.clear()   # pause
+pause_event.set()     # resume
 
-running = True
+running = False
 
 SUCCESS_COUNT = 0
 FAIL_COUNT = 0
