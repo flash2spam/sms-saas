@@ -902,12 +902,13 @@ function saveSettings(){fetch('/set_settings',{method:'POST',headers:{'Content-T
   const uname = document.cookie.split(';').map(c=>c.trim()).find(c=>c.startsWith('username='));
 })();
 
-// Afficher username (transmis par Jinja)
+// Afficher username + role (récupérés via API)
 document.addEventListener('DOMContentLoaded',function(){
-  const el = document.getElementById('sidebar-username');
-  if(el) el.textContent = '{{ username }}';
-  const isAdmin = '{{ role }}' === 'admin';
-  if(isAdmin) document.getElementById('admin-nav-item').style.display='block';
+  fetch('/me').then(r=>r.json()).then(data=>{
+    const el = document.getElementById('sidebar-username');
+    if(el) el.textContent = data.username || '';
+    if(data.role === 'admin') document.getElementById('admin-nav-item').style.display='block';
+  }).catch(()=>{});
 });
 
 // ─── ADMIN PANEL ───
@@ -917,7 +918,7 @@ function loadAdminPanel(){
       <tr>
         <td>${u.id}</td>
         <td>${u.username}</td>
-        <td><span style="padding:2px 8px;border-radius:4px;background:${u.role==='admin'?'rgba(255,160,0,0.2)':'rgba(100,200,255,0.1)';};color:${u.role==='admin'?'#ffa000':'#64c8ff'}">${u.role}</span></td>
+        <td><span style="padding:2px 8px;border-radius:4px;background:${u.role==='admin'?'rgba(255,160,0,0.2)':'rgba(100,200,255,0.1)'};color:${u.role==='admin'?'#ffa000':'#64c8ff'}">${u.role}</span></td>
         <td>${u.created_at||''}</td>
         <td>
           <button class="btn btn-warn" style="padding:4px 10px;font-size:12px" onclick="resetPwd(${u.id},'${u.username}')">🔑 MDP</button>
