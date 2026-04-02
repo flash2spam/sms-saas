@@ -6,9 +6,10 @@ import csv
 import os
 import random
 
-pause_event.clear()   # pause
-pause_event.set()     # resume
+pause_event = threading.Event()
+pause_event.set()
 
+# ✅ FIX IMPORTANT
 running = False
 
 SUCCESS_COUNT = 0
@@ -165,7 +166,6 @@ def get_history(filter_status=None, limit=100):
 # TEMPLATES
 # ═══════════════════════════════════════════════
 def get_random_template():
-    """Retourne un template aléatoire, ou le MESSAGE_TEXT par défaut."""
     conn = sqlite3.connect(DB)
     rows = conn.execute("SELECT content FROM templates").fetchall()
     conn.close()
@@ -183,14 +183,17 @@ def remove_phone_from_csv(phone):
     try:
         with open(CSV_PATH, newline="", encoding="utf-8") as f:
             rows = list(csv.DictReader(f))
-        remaining = [r for r in rows if r.get("phone", "").strip() != phone]
+
+        remaining = [r for r in rows if (r.get("phone") or "").strip() != phone]
+
         with open(CSV_PATH, "w", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=["phone"])
             writer.writeheader()
             writer.writerows(remaining)
-        print(f"🗑️  {phone} retiré du CSV ({len(remaining)} restants)")
+
+        print(f"🗑️ {phone} retiré ({len(remaining)} restants)")
     except Exception as e:
-        print(f"⚠️  Erreur suppression CSV: {e}")
+        print(f"⚠️ CSV error: {e}")
 
 
 def delete_csv():
@@ -216,7 +219,7 @@ def csv_count():
 # MAIN BOT
 # ═══════════════════════════════════════════════
 def main():
-    global SUCCESS_COUNT, FAIL_COUNT
+    global SUCCESS_COUNT, FAIL_COUNT, running
 
     if not os.path.exists(CSV_PATH):
         print("❌ Pas de CSV")
@@ -244,7 +247,7 @@ def main():
         device = devices[index % len(devices)]
         index += 1
 
-        phone = row.get("phone", "").strip()
+        phone = (row.get("phone") or "").strip()
         if not phone:
             continue
 
@@ -253,7 +256,6 @@ def main():
             remove_phone_from_csv(phone)
             continue
 
-        # Choisir message (template aléatoire ou message par défaut)
         message = get_random_template()
 
         try:
@@ -272,14 +274,10 @@ def main():
 
             if r.status_code < 300:
                 SUCCESS_COUNT += 1
-                update_device(device["name"], "success", device["success"] + 1)
-                update_device(device["name"], "sent", device["sent"] + 1)
                 add_history(phone, device["name"], "success")
                 remove_phone_from_csv(phone)
             else:
                 FAIL_COUNT += 1
-                update_device(device["name"], "fail", device["fail"] + 1)
-                update_device(device["name"], "sent", device["sent"] + 1)
                 add_history(phone, device["name"], "fail")
 
         except Exception as e:
@@ -287,14 +285,6 @@ def main():
             FAIL_COUNT += 1
             add_history(phone, device["name"], "fail")
 
-        # Pause automatique
-        current_devices = get_devices()
-        for d in current_devices:
-            if d["name"] == device["name"] and d["sent"] > 0 and d["sent"] % PAUSE_EVERY == 0:
-                print(f"⏸️  Pause {PAUSE_TIME}s")
-                time.sleep(PAUSE_TIME)
-                break
-
         time.sleep(random.uniform(DELAY, DELAY + 1.5))
 
-    print(f"✅ Campagne terminée — {SUCCESS_COUNT} envoyés, {FAIL_COUNT} erreurs")
+    print(f"✅ Terminé — {SUCCESS_COUNT} succès, {FAIL_COUNT} erreurs")
