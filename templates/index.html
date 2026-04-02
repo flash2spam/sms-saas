@@ -581,6 +581,47 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
     </div>
   </div>
 
+  <div class="tab-section" id="tab-admin">
+    <div class="sec-header">
+      <div><div class="sec-title">Utilisateurs</div><div class="sec-sub">Gestion des comptes (Admin uniquement)</div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Créer un compte</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <input class="input-field" id="new-username" placeholder="Nom d'utilisateur" style="flex:1;min-width:120px">
+        <input class="input-field" id="new-password" placeholder="Mot de passe" type="password" style="flex:1;min-width:120px">
+        <select id="new-role" class="input-field" style="width:120px">
+          <option value="user">user</option>
+          <option value="admin">admin</option>
+        </select>
+        <button class="btn btn-primary" onclick="createUser()">➕ Créer</button>
+      </div>
+    </div>
+    <div class="panel" style="padding:0;overflow:hidden">
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead>
+          <tr style="background:rgba(255,255,255,0.03)">
+            <th style="padding:12px 16px;text-align:left;font-size:11px;opacity:0.5;font-weight:600;letter-spacing:1px">ID</th>
+            <th style="padding:12px 16px;text-align:left;font-size:11px;opacity:0.5;font-weight:600;letter-spacing:1px">USERNAME</th>
+            <th style="padding:12px 16px;text-align:left;font-size:11px;opacity:0.5;font-weight:600;letter-spacing:1px">RÔLE</th>
+            <th style="padding:12px 16px;text-align:left;font-size:11px;opacity:0.5;font-weight:600;letter-spacing:1px">CRÉÉ LE</th>
+            <th style="padding:12px 16px;text-align:left;font-size:11px;opacity:0.5;font-weight:600;letter-spacing:1px">ACTIONS</th>
+          </tr>
+        </thead>
+        <tbody id="admin-user-table">
+          <tr><td colspan="5" style="padding:20px;text-align:center;opacity:0.4">Chargement...</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Mon mot de passe</div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <input class="input-field" id="my-new-password" placeholder="Nouveau mot de passe" type="password" style="flex:1">
+        <button class="btn btn-primary" onclick="changeMyPwd()">🔑 Changer</button>
+      </div>
+    </div>
+  </div>
+
 </main>
 </div>
 
@@ -596,6 +637,7 @@ function go(name, el) {
   if(name==='blacklist') loadBL()
   if(name==='history') loadHist()
   if(name==='templates') loadTemplates()
+  if(name==='admin') loadAdminPanel()
 }
 
 // ─── TOAST ───
@@ -850,10 +892,88 @@ function saveMsg(){fetch('/set_message',{method:'POST',headers:{'Content-Type':'
 // ─── SETTINGS ───
 function saveSettings(){fetch('/set_settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({delay:document.getElementById('r-delay').value,pause_every:document.getElementById('r-every').value,pause_time:document.getElementById('r-ptime').value})}).then(()=>toast('✓ Réglages sauvegardés','s'))}
 
+
+// ─── MULTI-COMPTE INIT ───
+(function(){
+  fetch('/admin/users').then(r=>r.json()).then(()=>{
+    document.getElementById('admin-nav-item').style.display='block';
+  }).catch(()=>{});
+  // Afficher username dans sidebar (récupéré via meta ou cookie)
+  const uname = document.cookie.split(';').map(c=>c.trim()).find(c=>c.startsWith('username='));
+})();
+
+// Afficher username (transmis par Jinja)
+document.addEventListener('DOMContentLoaded',function(){
+  const el = document.getElementById('sidebar-username');
+  if(el) el.textContent = '{{ username }}';
+  const isAdmin = '{{ role }}' === 'admin';
+  if(isAdmin) document.getElementById('admin-nav-item').style.display='block';
+});
+
+// ─── ADMIN PANEL ───
+function loadAdminPanel(){
+  fetch('/admin/users').then(r=>r.json()).then(data=>{
+    let rows = data.users.map(u=>`
+      <tr>
+        <td>${u.id}</td>
+        <td>${u.username}</td>
+        <td><span style="padding:2px 8px;border-radius:4px;background:${u.role==='admin'?'rgba(255,160,0,0.2)':'rgba(100,200,255,0.1)';};color:${u.role==='admin'?'#ffa000':'#64c8ff'}">${u.role}</span></td>
+        <td>${u.created_at||''}</td>
+        <td>
+          <button class="btn btn-warn" style="padding:4px 10px;font-size:12px" onclick="resetPwd(${u.id},'${u.username}')">🔑 MDP</button>
+          <button class="btn btn-danger" style="padding:4px 10px;font-size:12px;background:rgba(255,50,50,0.15);color:#ff5050;border:1px solid rgba(255,50,50,0.3)" onclick="deleteUser(${u.id},'${u.username}')">✕ Suppr</button>
+        </td>
+      </tr>`).join('');
+    document.getElementById('admin-user-table').innerHTML = rows || '<tr><td colspan="5" style="opacity:0.4;text-align:center">Aucun utilisateur</td></tr>';
+  });
+}
+
+function createUser(){
+  const u = document.getElementById('new-username').value.trim();
+  const p = document.getElementById('new-password').value.trim();
+  const r = document.getElementById('new-role').value;
+  if(!u||!p){toast('Remplis tous les champs','e');return;}
+  fetch('/admin/create_user',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p,role:r})})
+    .then(r=>r.json()).then(d=>{
+      if(d.status==='ok'){toast('✓ Utilisateur créé','s');document.getElementById('new-username').value='';document.getElementById('new-password').value='';loadAdminPanel();}
+      else toast('✗ '+d.message,'e');
+    });
+}
+
+function deleteUser(id,name){
+  if(!confirm('Supprimer ' + name + ' et toutes ses données ?')) return;
+  fetch('/admin/delete_user',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:id})})
+    .then(r=>r.json()).then(d=>{
+      if(d.status==='ok'){toast('✓ Supprimé','s');loadAdminPanel();}
+      else toast('✗ '+d.message,'e');
+    });
+}
+
+function resetPwd(id,name){
+  const p = prompt('Nouveau mot de passe pour ' + name + ' :');
+  if(!p) return;
+  fetch('/admin/reset_password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:id,password:p})})
+    .then(r=>r.json()).then(d=>{
+      if(d.status==='ok') toast('✓ Mot de passe mis à jour','s');
+      else toast('✗ Erreur','e');
+    });
+}
+
+function changeMyPwd(){
+  const p = document.getElementById('my-new-password').value.trim();
+  if(!p){toast('Mot de passe vide','e');return;}
+  fetch('/change_password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:p})})
+    .then(r=>r.json()).then(d=>{
+      if(d.status==='ok'){toast('✓ Mot de passe changé','s');document.getElementById('my-new-password').value='';}
+      else toast('✗ Erreur','e');
+    });
+}
+
 // ─── INIT ───
 loadDevices()
 loadCsvStatus()
 loadTemplates()
+
 </script>
 
 </body>
