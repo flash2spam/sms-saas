@@ -121,6 +121,17 @@ def change_password():
     return jsonify({"status": "ok"})
 
 
+# ===== ME =====
+@app.route("/me")
+@login_required
+def me():
+    return jsonify({
+        "id": session.get("user_id"),
+        "username": session.get("username"),
+        "role": session.get("role")
+    })
+
+
 # ===== BOT =====
 @app.route("/start", methods=["POST"])
 @login_required
