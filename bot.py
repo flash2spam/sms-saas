@@ -9,7 +9,6 @@ import random
 pause_event = threading.Event()
 pause_event.set()
 
-# ✅ FIX IMPORTANT
 running = False
 
 SUCCESS_COUNT = 0
@@ -19,7 +18,7 @@ DELAY = 2
 PAUSE_EVERY = 10
 PAUSE_TIME = 30
 
-MESSAGE_TEXT = "🔥 Message depuis ton SaaS"
+MESSAGE_TEXT = "Message depuis ton SaaS"
 
 DB = "data.db"
 CSV_PATH = "uploads/contacts.csv"
@@ -182,18 +181,20 @@ def remove_phone_from_csv(phone):
         return
     try:
         with open(CSV_PATH, newline="", encoding="utf-8") as f:
-            rows = list(csv.DictReader(f))
+            reader = csv.DictReader(f)
+            fieldnames = reader.fieldnames or ["phone"]
+            rows = list(reader)
 
         remaining = [r for r in rows if (r.get("phone") or "").strip() != phone]
 
         with open(CSV_PATH, "w", newline="", encoding="utf-8") as f:
-            writer = csv.DictWriter(f, fieldnames=["phone"])
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
             writer.writeheader()
             writer.writerows(remaining)
 
-        print(f"🗑️ {phone} retiré ({len(remaining)} restants)")
+        print(f"  {phone} retiré ({len(remaining)} restants)")
     except Exception as e:
-        print(f"⚠️ CSV error: {e}")
+        print(f"  CSV error: {e}")
 
 
 def delete_csv():
@@ -222,26 +223,32 @@ def main():
     global SUCCESS_COUNT, FAIL_COUNT, running
 
     if not os.path.exists(CSV_PATH):
-        print("❌ Pas de CSV")
+        print("Pas de CSV")
         return
 
     with open(CSV_PATH, newline="", encoding="utf-8") as f:
         rows = list(csv.DictReader(f))
 
-    print(f"📋 {len(rows)} numéros chargés")
+    print(f"{len(rows)} numéros chargés")
     index = 0
+    sent_since_pause = 0
 
     for row in rows:
         if not running:
-            print("⛔ Bot arrêté")
+            print("Bot arrêté")
             break
 
         while not pause_event.is_set():
             time.sleep(1)
 
+        if PAUSE_EVERY > 0 and sent_since_pause >= PAUSE_EVERY:
+            print(f"Pause automatique de {PAUSE_TIME}s après {PAUSE_EVERY} envois")
+            time.sleep(PAUSE_TIME)
+            sent_since_pause = 0
+
         devices = [d for d in get_devices() if d["active"]]
         if not devices:
-            print("❌ Aucun device actif")
+            print("Aucun device actif")
             break
 
         device = devices[index % len(devices)]
@@ -252,7 +259,7 @@ def main():
             continue
 
         if is_blacklisted(phone):
-            print(f"🚫 {phone} blacklisté")
+            print(f"Blacklisté: {phone}")
             remove_phone_from_csv(phone)
             continue
 
@@ -270,10 +277,11 @@ def main():
                 timeout=30
             )
 
-            print(f"📨 {phone} | {r.status_code}")
+            print(f"SMS {phone} | {r.status_code}")
 
             if r.status_code < 300:
                 SUCCESS_COUNT += 1
+                sent_since_pause += 1
                 add_history(phone, device["name"], "success")
                 remove_phone_from_csv(phone)
             else:
@@ -281,10 +289,10 @@ def main():
                 add_history(phone, device["name"], "fail")
 
         except Exception as e:
-            print(f"❌ ERREUR: {e}")
+            print(f"ERREUR: {e}")
             FAIL_COUNT += 1
             add_history(phone, device["name"], "fail")
 
         time.sleep(random.uniform(DELAY, DELAY + 1.5))
 
-    print(f"✅ Terminé — {SUCCESS_COUNT} succès, {FAIL_COUNT} erreurs")
+    print(f"Terminé — {SUCCESS_COUNT} succès, {FAIL_COUNT} erreurs")
