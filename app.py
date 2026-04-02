@@ -13,8 +13,6 @@ app.secret_key = os.environ.get("SECRET_KEY", "ultra_secret_key_2026")
 DB = "data.db"
 bot.init_db()
 
-bot_thread = None
-
 
 # ═══════════════════════════════════════════════
 # HELPERS
@@ -75,9 +73,15 @@ def init_users_and_tickets():
     )
     """)
 
-    # ✅ FIX ADMIN (IMPORTANT)
-    admin = c.execute("SELECT * FROM users WHERE username='admin'").fetchone()
+    c.execute("""
+    CREATE TABLE IF NOT EXISTS templates (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        content TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
 
+    admin = c.execute("SELECT * FROM users WHERE username='admin'").fetchone()
     if not admin:
         c.execute(
             "INSERT INTO users (username, password, role) VALUES (?, ?, ?)",
@@ -89,6 +93,8 @@ def init_users_and_tickets():
 
 
 init_users_and_tickets()
+
+bot_thread = None
 
 
 def current_user():
@@ -138,7 +144,6 @@ def login():
         ).fetchone()
         conn.close()
 
-        # ✅ FIX LOGIN (hash + ancien password)
         if user:
             if user["password"] == hash_pw(password) or user["password"] == password:
                 session["user_id"] = user["id"]
@@ -184,7 +189,257 @@ def change_password():
 
 
 # ═══════════════════════════════════════════════
-# BOT (FIX START)
+# ADMIN — USERS
+# ═══════════════════════════════════════════════
+@app.route("/admin/users")
+@require_login
+@require_admin
+def admin_users():
+    conn = get_db()
+    rows = [dict(r) for r in conn.execute(
+        "SELECT id, username, role, created_at FROM users ORDER BY id ASC"
+    ).fetchall()]
+    conn.close()
+    return jsonify({"users": rows})
+
+
+@app.route("/admin/create_user", methods=["POST"])
+@require_login
+@require_admin
+def admin_create_user():
+    data = request.json or {}
+    username = data.get("username", "").strip()
+    password = data.get("password", "").strip()
+    role = data.get("role", "user").strip()
+
+    if not username or not password:
+        return jsonify({"status": "error", "message": "Champs manquants"})
+    if role not in ("user", "admin"):
+        role = "user"
+
+    try:
+        conn = get_db()
+        conn.execute(
+            "INSERT INTO users (username, password, role) VALUES (?, ?, ?)",
+            (username, hash_pw(password), role)
+        )
+        conn.commit()
+        conn.close()
+        return jsonify({"status": "ok"})
+    except sqlite3.IntegrityError:
+        return jsonify({"status": "error", "message": "Nom d'utilisateur déjà pris"})
+
+
+@app.route("/admin/delete_user", methods=["POST"])
+@require_login
+@require_admin
+def admin_delete_user():
+    uid = request.json.get("id")
+    if uid == session.get("user_id"):
+        return jsonify({"status": "error", "message": "Impossible de se supprimer soi-même"})
+    conn = get_db()
+    conn.execute("DELETE FROM users WHERE id=?", (uid,))
+    conn.commit()
+    conn.close()
+    return jsonify({"status": "ok"})
+
+
+@app.route("/admin/reset_password", methods=["POST"])
+@require_login
+@require_admin
+def admin_reset_password():
+    data = request.json or {}
+    uid = data.get("id")
+    password = data.get("password", "").strip()
+    if not uid or not password:
+        return jsonify({"status": "error", "message": "Champs manquants"})
+    conn = get_db()
+    conn.execute("UPDATE users SET password=? WHERE id=?", (hash_pw(password), uid))
+    conn.commit()
+    conn.close()
+    return jsonify({"status": "ok"})
+
+
+# ═══════════════════════════════════════════════
+# TICKETS
+# ═══════════════════════════════════════════════
+@app.route("/tickets")
+@require_login
+def get_tickets():
+    u = current_user()
+    conn = get_db()
+    filter_status = request.args.get("filter")
+
+    if u["role"] == "admin":
+        query = "SELECT * FROM tickets"
+        params = []
+        if filter_status:
+            query += " WHERE status=?"
+            params.append(filter_status)
+        query += " ORDER BY id DESC"
+        rows = conn.execute(query, params).fetchall()
+    else:
+        query = "SELECT * FROM tickets WHERE user_id=?"
+        params = [u["id"]]
+        if filter_status:
+            query += " AND status=?"
+            params.append(filter_status)
+        query += " ORDER BY id DESC"
+        rows = conn.execute(query, params).fetchall()
+
+    tickets = []
+    for r in rows:
+        t = dict(r)
+        last_read = conn.execute(
+            "SELECT last_read FROM ticket_reads WHERE ticket_id=? AND user_id=?",
+            (t["id"], u["id"])
+        ).fetchone()
+        unread_count = conn.execute(
+            "SELECT COUNT(*) FROM ticket_replies WHERE ticket_id=? AND created_at > ?",
+            (t["id"], last_read["last_read"] if last_read else "1970-01-01")
+        ).fetchone()[0]
+        t["unread"] = unread_count > 0
+        tickets.append(t)
+
+    conn.close()
+    return jsonify({"tickets": tickets})
+
+
+@app.route("/tickets/unread_count")
+@require_login
+def tickets_unread_count():
+    u = current_user()
+    conn = get_db()
+    if u["role"] == "admin":
+        ticket_ids = [r[0] for r in conn.execute("SELECT id FROM tickets").fetchall()]
+    else:
+        ticket_ids = [r[0] for r in conn.execute(
+            "SELECT id FROM tickets WHERE user_id=?", (u["id"],)
+        ).fetchall()]
+
+    count = 0
+    for tid in ticket_ids:
+        last_read = conn.execute(
+            "SELECT last_read FROM ticket_reads WHERE ticket_id=? AND user_id=?",
+            (tid, u["id"])
+        ).fetchone()
+        unread = conn.execute(
+            "SELECT COUNT(*) FROM ticket_replies WHERE ticket_id=? AND created_at > ?",
+            (tid, last_read["last_read"] if last_read else "1970-01-01")
+        ).fetchone()[0]
+        if unread > 0:
+            count += 1
+
+    conn.close()
+    return jsonify({"count": count})
+
+
+@app.route("/tickets/create", methods=["POST"])
+@require_login
+def create_ticket():
+    u = current_user()
+    data = request.json or {}
+    subject = data.get("subject", "").strip()
+    message = data.get("message", "").strip()
+
+    if not subject or not message:
+        return jsonify({"status": "error", "message": "Sujet et message requis"})
+
+    conn = get_db()
+    conn.execute(
+        "INSERT INTO tickets (user_id, username, subject, message) VALUES (?, ?, ?, ?)",
+        (u["id"], u["username"], subject, message)
+    )
+    conn.commit()
+    conn.close()
+    return jsonify({"status": "ok"})
+
+
+@app.route("/tickets/<int:tid>/replies")
+@require_login
+def get_ticket_replies(tid):
+    u = current_user()
+    conn = get_db()
+
+    ticket = conn.execute("SELECT * FROM tickets WHERE id=?", (tid,)).fetchone()
+    if not ticket:
+        conn.close()
+        return jsonify({"status": "error", "message": "Ticket introuvable"}), 404
+
+    ticket = dict(ticket)
+    if u["role"] != "admin" and ticket["user_id"] != u["id"]:
+        conn.close()
+        return jsonify({"status": "error", "message": "Accès refusé"}), 403
+
+    replies = [dict(r) for r in conn.execute(
+        "SELECT * FROM ticket_replies WHERE ticket_id=? ORDER BY id ASC", (tid,)
+    ).fetchall()]
+
+    conn.execute(
+        "INSERT OR REPLACE INTO ticket_reads (ticket_id, user_id, last_read) VALUES (?, ?, ?)",
+        (tid, u["id"], datetime.utcnow().isoformat())
+    )
+    conn.commit()
+    conn.close()
+
+    return jsonify({"ticket": ticket, "replies": replies})
+
+
+@app.route("/tickets/<int:tid>/reply", methods=["POST"])
+@require_login
+def reply_ticket(tid):
+    u = current_user()
+    data = request.json or {}
+    message = data.get("message", "").strip()
+
+    if not message:
+        return jsonify({"status": "error", "message": "Message vide"})
+
+    conn = get_db()
+    ticket = conn.execute("SELECT * FROM tickets WHERE id=?", (tid,)).fetchone()
+    if not ticket:
+        conn.close()
+        return jsonify({"status": "error", "message": "Ticket introuvable"}), 404
+
+    if u["role"] != "admin" and dict(ticket)["user_id"] != u["id"]:
+        conn.close()
+        return jsonify({"status": "error", "message": "Accès refusé"}), 403
+
+    conn.execute(
+        "INSERT INTO ticket_replies (ticket_id, author, role, message) VALUES (?, ?, ?, ?)",
+        (tid, u["username"], u["role"], message)
+    )
+    conn.commit()
+    conn.close()
+    return jsonify({"status": "ok"})
+
+
+@app.route("/tickets/<int:tid>/close", methods=["POST"])
+@require_login
+@require_admin
+def close_ticket(tid):
+    conn = get_db()
+    conn.execute("UPDATE tickets SET status='closed' WHERE id=?", (tid,))
+    conn.commit()
+    conn.close()
+    return jsonify({"status": "ok"})
+
+
+@app.route("/tickets/<int:tid>/delete", methods=["POST"])
+@require_login
+@require_admin
+def delete_ticket(tid):
+    conn = get_db()
+    conn.execute("DELETE FROM ticket_replies WHERE ticket_id=?", (tid,))
+    conn.execute("DELETE FROM ticket_reads WHERE ticket_id=?", (tid,))
+    conn.execute("DELETE FROM tickets WHERE id=?", (tid,))
+    conn.commit()
+    conn.close()
+    return jsonify({"status": "ok"})
+
+
+# ═══════════════════════════════════════════════
+# BOT
 # ═══════════════════════════════════════════════
 @app.route("/start", methods=["POST"])
 @require_login
@@ -192,7 +447,7 @@ def start():
     global bot_thread
     if bot_thread is None or not bot_thread.is_alive():
         bot.running = True
-        bot.pause_event.set()  # ✅ IMPORTANT
+        bot.pause_event.set()
         bot_thread = threading.Thread(target=bot.main)
         bot_thread.daemon = True
         bot_thread.start()
@@ -389,10 +644,12 @@ def delete_contact():
     path = bot.CSV_PATH
     try:
         with open(path, newline="", encoding="utf-8") as f:
-            rows = list(csv.DictReader(f))
-        rows = [r for r in rows if r["phone"] != phone]
+            reader = csv.DictReader(f)
+            fieldnames = reader.fieldnames or ["phone"]
+            rows = list(reader)
+        rows = [r for r in rows if r.get("phone", "").strip() != phone]
         with open(path, "w", newline="", encoding="utf-8") as f:
-            writer = csv.DictWriter(f, fieldnames=["phone"])
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
             writer.writeheader()
             writer.writerows(rows)
         return jsonify({"status": "ok"})
