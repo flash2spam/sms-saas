@@ -43,8 +43,8 @@ def init_db():
     )
     """)
 
-    admin_user = os.environ.get("USERNAME", "papa")
-    admin_pass = os.environ.get("PASSWORD", "2026Money$")
+    admin_user = os.environ.get("USERNAME", "admin")
+    admin_pass = os.environ.get("PASSWORD", "1234")
     c.execute("""
         INSERT OR IGNORE INTO users (username, password, role)
         VALUES (?, ?, 'admin')
