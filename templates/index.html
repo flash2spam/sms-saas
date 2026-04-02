@@ -198,6 +198,13 @@ textarea.input{resize:vertical;min-height:100px;line-height:1.6;}
 /* SETTINGS */
 .settings-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border);gap:24px;}
 .settings-row:last-child{border-bottom:none;}
+.faq-item{border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:4px;}
+.faq-q{padding:14px 16px;cursor:pointer;font-size:14px;font-weight:600;color:var(--text);display:flex;justify-content:space-between;align-items:center;transition:background 0.2s;}
+.faq-q::after{content:'▾';font-size:16px;opacity:0.5;transition:transform 0.2s;}
+.faq-item.open .faq-q::after{transform:rotate(180deg);}
+.faq-q:hover{background:rgba(255,255,255,0.04);}
+.faq-a{display:none;padding:0 16px 14px;font-size:13px;color:var(--text-muted);line-height:1.7;border-top:1px solid var(--border);}
+.faq-item.open .faq-a{display:block;}
 .s-label{font-size:12px;color:var(--text);margin-bottom:2px;}
 .s-desc{font-size:11px;color:var(--text-muted);}
 .settings-ctrl{flex-shrink:0;width:200px;}
@@ -276,6 +283,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
     <div class="nav-item" onclick="go('message',this)"><span class="nav-icon">✎</span><span class="nav-text">Message</span></div>
     <div class="nav-item" onclick="go('templates',this)"><span class="nav-icon">⊞</span><span class="nav-text">Templates</span></div>
     <div class="nav-item" onclick="go('settings',this)"><span class="nav-icon">⚙</span><span class="nav-text">Réglages</span></div>
+    <div class="nav-group">Aide</div>
+    <div class="nav-item" onclick="go('guide',this)"><span class="nav-icon">📖</span><span class="nav-text">Guide</span></div>
+    <div class="nav-item" onclick="go('support',this)"><span class="nav-icon">💬</span><span class="nav-text">Support</span></div>
     <div id="admin-nav-item" style="display:none">
       <div class="nav-group">Admin</div>
       <div class="nav-item" onclick="go('admin',this)"><span class="nav-icon">👥</span><span class="nav-text">Utilisateurs</span></div>
@@ -586,6 +596,249 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
     </div>
   </div>
 
+  <!-- ====== GUIDE ====== -->
+  <div class="tab-section" id="tab-guide">
+    <div class="sec-header">
+      <div><div class="sec-title">Guide d'utilisation</div><div class="sec-sub">Comment configurer et utiliser le bot SMS</div></div>
+    </div>
+
+    <!-- ÉTAPE 1 -->
+    <div class="panel">
+      <div class="panel-title">📱 Étape 1 — Installer l'app sur ton téléphone</div>
+      <div style="line-height:1.8;color:var(--text-muted)">
+        <p style="margin:0 0 12px">Le bot envoie les SMS depuis ton téléphone Android via l'application <strong style="color:var(--text)">SMS Gate</strong>. Tu dois l'installer sur chaque téléphone que tu veux utiliser.</p>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px">
+          <a href="https://play.google.com/store/apps/details?id=me.capcom.smsgateway" target="_blank" class="btn btn-primary" style="text-decoration:none">▶ Télécharger sur Google Play</a>
+          <a href="https://sms-gate.app" target="_blank" class="btn btn-ghost" style="text-decoration:none">🌐 Site officiel</a>
+        </div>
+        <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:14px;border:1px solid var(--border)">
+          <div style="font-size:12px;font-weight:700;color:var(--text-muted);letter-spacing:1px;margin-bottom:8px">⚠️ REQUIS</div>
+          <ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px">
+            <li>Téléphone Android uniquement (pas iOS)</li>
+            <li>Une carte SIM active avec forfait SMS</li>
+            <li>L'app doit rester ouverte en arrière-plan</li>
+            <li>Désactiver l'optimisation de batterie pour l'app</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- ÉTAPE 2 -->
+    <div class="panel">
+      <div class="panel-title">🔑 Étape 2 — Créer un compte SMS Gate</div>
+      <div style="line-height:1.8;color:var(--text-muted)">
+        <p style="margin:0 0 12px">Dans l'application SMS Gate sur ton téléphone :</p>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;gap:12px;align-items:flex-start">
+            <div style="min-width:28px;height:28px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#000">1</div>
+            <div>Ouvre l'app → appuie sur <strong style="color:var(--text)">« Se connecter »</strong> ou <strong style="color:var(--text)">« Créer un compte »</strong></div>
+          </div>
+          <div style="display:flex;gap:12px;align-items:flex-start">
+            <div style="min-width:28px;height:28px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#000">2</div>
+            <div>Crée un compte avec un email et un mot de passe — <strong style="color:var(--text)">note bien ces identifiants</strong>, tu en auras besoin ici</div>
+          </div>
+          <div style="display:flex;gap:12px;align-items:flex-start">
+            <div style="min-width:28px;height:28px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#000">3</div>
+            <div>Une fois connecté, l'app affiche un <strong style="color:var(--text)">Device ID</strong> (ex: <code style="background:rgba(255,255,255,0.08);padding:2px 6px;border-radius:4px">android-xxxx-xxxx</code>) — note-le aussi</div>
+          </div>
+          <div style="display:flex;gap:12px;align-items:flex-start">
+            <div style="min-width:28px;height:28px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#000">4</div>
+            <div>Active le <strong style="color:var(--text)">mode serveur local</strong> dans les paramètres de l'app si tu veux l'utiliser en local (optionnel)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ÉTAPE 3 -->
+    <div class="panel">
+      <div class="panel-title">📡 Étape 3 — Connecter le téléphone au panel</div>
+      <div style="line-height:1.8;color:var(--text-muted)">
+        <p style="margin:0 0 12px">Va dans l'onglet <strong style="color:var(--text)">Devices</strong> de ce panel et clique sur <strong style="color:var(--text)">« + Nouveau Device »</strong>. Remplis les champs :</p>
+        <div style="display:grid;gap:10px">
+          <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:12px;border:1px solid var(--border)">
+            <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:4px">Nom du device</div>
+            <div style="font-size:13px">Un nom pour identifier ton téléphone, ex: <code style="background:rgba(255,255,255,0.08);padding:2px 6px;border-radius:4px">Samsung-Jean</code></div>
+          </div>
+          <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:12px;border:1px solid var(--border)">
+            <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:4px">Device ID</div>
+            <div style="font-size:13px">Le code affiché dans l'app SMS Gate sur ton téléphone, ex: <code style="background:rgba(255,255,255,0.08);padding:2px 6px;border-radius:4px">android-xxxx-xxxx</code></div>
+          </div>
+          <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:12px;border:1px solid var(--border)">
+            <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:4px">Username / Password</div>
+            <div style="font-size:13px">Les identifiants de ton compte SMS Gate (email + mot de passe que tu as créé dans l'app)</div>
+          </div>
+        </div>
+        <p style="margin:12px 0 0">Une fois ajouté, le device apparaît dans la liste. Assure-toi qu'il est <span class="badge badge-s">✓ Actif</span> avant de lancer le bot.</p>
+      </div>
+    </div>
+
+    <!-- ÉTAPE 4 -->
+    <div class="panel">
+      <div class="panel-title">📋 Étape 4 — Préparer les contacts</div>
+      <div style="line-height:1.8;color:var(--text-muted)">
+        <p style="margin:0 0 12px">Va dans l'onglet <strong style="color:var(--text)">Contacts</strong> et uploade un fichier CSV avec tes numéros.</p>
+        <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:14px;border:1px solid var(--border);margin-bottom:12px">
+          <div style="font-size:12px;font-weight:700;color:var(--text-muted);letter-spacing:1px;margin-bottom:8px">FORMAT DU FICHIER CSV</div>
+          <code style="font-size:13px;color:var(--accent)">phone<br>+33612345678<br>+33687654321<br>+1234567890</code>
+        </div>
+        <ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px">
+          <li>La première ligne doit être <code style="background:rgba(255,255,255,0.08);padding:2px 6px;border-radius:4px">phone</code></li>
+          <li>Un numéro par ligne, avec indicatif pays</li>
+          <li>Format international recommandé : <code style="background:rgba(255,255,255,0.08);padding:2px 6px;border-radius:4px">+33XXXXXXXXX</code></li>
+          <li>Chaque numéro est supprimé du CSV après envoi réussi (anti-doublon)</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ÉTAPE 5 -->
+    <div class="panel">
+      <div class="panel-title">✍️ Étape 5 — Rédiger le message</div>
+      <div style="line-height:1.8;color:var(--text-muted)">
+        <p style="margin:0 0 12px">Tu as deux options dans l'onglet <strong style="color:var(--text)">Message</strong> et <strong style="color:var(--text)">Templates</strong> :</p>
+        <div style="display:grid;gap:10px">
+          <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:12px;border:1px solid var(--border)">
+            <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:4px">Message unique</div>
+            <div>Un seul texte envoyé à tous les contacts. Simple et rapide.</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:12px;border:1px solid var(--border)">
+            <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:4px">Templates (recommandé)</div>
+            <div>Ajoute plusieurs variantes de ton message. Le bot en choisit un aléatoirement à chaque envoi — réduit le risque de filtre opérateur.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ÉTAPE 6 -->
+    <div class="panel">
+      <div class="panel-title">🚀 Étape 6 — Lancer le bot</div>
+      <div style="line-height:1.8;color:var(--text-muted)">
+        <p style="margin:0 0 12px">Une fois devices + contacts + message prêts :</p>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;gap:12px;align-items:center">
+            <button class="btn btn-success" style="pointer-events:none;opacity:0.8">▶ Start</button>
+            <div>Lance la campagne — le bot commence à envoyer les SMS</div>
+          </div>
+          <div style="display:flex;gap:12px;align-items:center">
+            <button class="btn btn-warn" style="pointer-events:none;opacity:0.8">⏸ Pause</button>
+            <div>Met le bot en pause — les envois en cours se terminent</div>
+          </div>
+          <div style="display:flex;gap:12px;align-items:center">
+            <button class="btn btn-ghost" style="pointer-events:none;opacity:0.8">↺ Resume</button>
+            <div>Reprend après une pause</div>
+          </div>
+          <div style="display:flex;gap:12px;align-items:center">
+            <div style="min-width:80px;height:32px;background:rgba(255,50,50,0.15);border:1px solid rgba(255,50,50,0.3);border-radius:6px;display:flex;align-items:center;justify-content:center;color:#ff5050;font-size:13px">■ Stop</div>
+            <div>Arrête complètement la campagne</div>
+          </div>
+        </div>
+        <p style="margin:12px 0 0">Surveille les stats en temps réel sur le <strong style="color:var(--text)">Dashboard</strong> et l'historique détaillé dans l'onglet <strong style="color:var(--text)">Historique</strong>.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== SUPPORT ====== -->
+  <div class="tab-section" id="tab-support">
+    <div class="sec-header">
+      <div><div class="sec-title">Support</div><div class="sec-sub">Problèmes fréquents et contact</div></div>
+    </div>
+
+    <!-- FAQ -->
+    <div class="panel">
+      <div class="panel-title">❓ Problèmes fréquents</div>
+      <div style="display:flex;flex-direction:column;gap:4px" id="faq-container">
+
+        <div class="faq-item" onclick="toggleFaq(this)">
+          <div class="faq-q">📵 Le device apparaît inactif / déconnecté</div>
+          <div class="faq-a">
+            Vérifie que l'app SMS Gate est ouverte sur le téléphone. Va dans les paramètres Android → Apps → SMS Gate → Batterie → désactive l'optimisation. Assure-toi aussi que le téléphone a une connexion internet active. Si le problème persiste, ferme et relance l'app.
+          </div>
+        </div>
+
+        <div class="faq-item" onclick="toggleFaq(this)">
+          <div class="faq-q">❌ Les SMS échouent tous (statut FAIL)</div>
+          <div class="faq-a">
+            Vérifie que le Device ID, l'username et le password dans le panel correspondent exactement à ceux de l'app SMS Gate. Teste aussi en envoyant manuellement un SMS depuis l'app pour vérifier que la SIM fonctionne. Certains opérateurs bloquent les SMS en masse — essaie de réduire le délai et d'augmenter les pauses dans Réglages.
+          </div>
+        </div>
+
+        <div class="faq-item" onclick="toggleFaq(this)">
+          <div class="faq-q">📂 Mon CSV ne s'uploade pas</div>
+          <div class="faq-a">
+            Vérifie que le fichier est bien au format .csv et que la première ligne est exactement <code style="background:rgba(255,255,255,0.08);padding:2px 6px;border-radius:4px">phone</code>. Pas d'espaces, pas d'autres colonnes. Si tu utilises Excel, enregistre en « CSV UTF-8 ».
+          </div>
+        </div>
+
+        <div class="faq-item" onclick="toggleFaq(this)">
+          <div class="faq-q">🔄 Le bot s'arrête tout seul</div>
+          <div class="faq-a">
+            Le bot s'arrête quand il n'y a plus de contacts dans le CSV (tous envoyés ou blacklistés) ou quand aucun device actif n'est disponible. Vérifie dans Contacts combien de numéros restent, et dans Devices que tes appareils sont actifs.
+          </div>
+        </div>
+
+        <div class="faq-item" onclick="toggleFaq(this)">
+          <div class="faq-q">📵 Je ne reçois pas les SMS de test</div>
+          <div class="faq-a">
+            Vérifie que le numéro de destination n'est pas dans ta Blacklist. Vérifie aussi que le message n'est pas vide. Regarde l'Historique pour voir si l'envoi apparaît en succès ou en échec.
+          </div>
+        </div>
+
+        <div class="faq-item" onclick="toggleFaq(this)">
+          <div class="faq-q">🔐 J'ai oublié mon mot de passe</div>
+          <div class="faq-a">
+            Contacte l'administrateur du panel pour qu'il réinitialise ton mot de passe depuis le panneau Utilisateurs.
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- CONTACT -->
+    <div class="panel">
+      <div class="panel-title">📩 Contacter le support</div>
+      <div style="color:var(--text-muted);line-height:1.8">
+        <p style="margin:0 0 16px">Tu as un problème non listé ci-dessus ? Envoie un message avec le maximum de détails.</p>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div>
+            <label style="font-size:12px;font-weight:700;color:var(--text-muted);letter-spacing:1px;display:block;margin-bottom:6px">TON USERNAME</label>
+            <input class="input-field" id="sup-user" readonly style="opacity:0.6;cursor:default">
+          </div>
+          <div>
+            <label style="font-size:12px;font-weight:700;color:var(--text-muted);letter-spacing:1px;display:block;margin-bottom:6px">SUJET</label>
+            <input class="input-field" id="sup-subject" placeholder="Décris brièvement ton problème...">
+          </div>
+          <div>
+            <label style="font-size:12px;font-weight:700;color:var(--text-muted);letter-spacing:1px;display:block;margin-bottom:6px">MESSAGE</label>
+            <textarea class="input-field" id="sup-msg" rows="5" placeholder="Décris ton problème en détail : ce que tu fais, ce qui se passe, les erreurs que tu vois..." style="resize:vertical;font-family:inherit"></textarea>
+          </div>
+          <button class="btn btn-primary" onclick="sendSupport()" style="align-self:flex-start">📨 Envoyer au support</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- INFOS SYSTÈME -->
+    <div class="panel">
+      <div class="panel-title">🖥️ Informations système</div>
+      <div style="display:grid;gap:8px;font-size:13px" id="sys-info">
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+          <span style="color:var(--text-muted)">Version du panel</span>
+          <span style="color:var(--text)">v2.0 Multi-compte</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+          <span style="color:var(--text-muted)">Utilisateur connecté</span>
+          <span style="color:var(--text)" id="sys-username">—</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+          <span style="color:var(--text-muted)">Rôle</span>
+          <span style="color:var(--text)" id="sys-role">—</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0">
+          <span style="color:var(--text-muted)">API SMS Gate</span>
+          <span style="color:#4ade80">✓ api.sms-gate.app</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="tab-section" id="tab-admin">
     <div class="sec-header">
       <div><div class="sec-title">Utilisateurs</div><div class="sec-sub">Gestion des comptes (Admin uniquement)</div></div>
@@ -643,6 +896,7 @@ function go(name, el) {
   if(name==='history') loadHist()
   if(name==='templates') loadTemplates()
   if(name==='admin') loadAdminPanel()
+  if(name==='support') loadSupportInfo()
 }
 
 // ─── TOAST ───
@@ -973,6 +1227,31 @@ function changeMyPwd(){
       if(d.status==='ok'){toast('✓ Mot de passe changé','s');document.getElementById('my-new-password').value='';}
       else toast('✗ Erreur','e');
     });
+}
+
+// ─── GUIDE & SUPPORT ───
+function toggleFaq(el){el.classList.toggle('open')}
+
+function sendSupport(){
+  const subject = document.getElementById('sup-subject').value.trim();
+  const msg = document.getElementById('sup-msg').value.trim();
+  if(!subject||!msg){toast('Remplis le sujet et le message','e');return;}
+  const username = document.getElementById('sup-user').value||'inconnu';
+  const full = `Support request de: ${username}\nSujet: ${subject}\n\n${msg}`;
+  const mailto = `mailto:?subject=${encodeURIComponent('[SMS Panel] '+subject)}&body=${encodeURIComponent(full)}`;
+  window.open(mailto);
+  toast('✓ Client mail ouvert','s');
+}
+
+function loadSupportInfo(){
+  fetch('/me').then(r=>r.json()).then(d=>{
+    const el = document.getElementById('sup-user');
+    if(el) el.value = d.username||'';
+    const su = document.getElementById('sys-username');
+    const sr = document.getElementById('sys-role');
+    if(su) su.textContent = d.username||'—';
+    if(sr) sr.textContent = d.role||'—';
+  }).catch(()=>{});
 }
 
 // ─── INIT ───
