@@ -8,7 +8,7 @@ import hashlib
 from datetime import datetime
 
 app = Flask(__name__)
-app.secret_key = "secret123_change_me"
+app.secret_key = os.environ.get("SECRET_KEY", "ultra_secret_key_2026")
 
 DB = "data.db"
 bot.init_db()
@@ -81,13 +81,14 @@ def init_users_and_tickets():
     )
     """)
 
-    # Create default admin if no users exist
-    existing = c.execute("SELECT COUNT(*) FROM users").fetchone()[0]
-    if existing == 0:
-        c.execute(
-            "INSERT INTO users (username, password, role) VALUES (?, ?, ?)",
-            ("admin", hash_pw("admin123"), "admin")
-        )
+    # assure admin toujours présent
+admin = c.execute("SELECT * FROM users WHERE username='admin'").fetchone()
+
+if not admin:
+    c.execute(
+        "INSERT INTO users (username, password, role) VALUES (?, ?, ?)",
+        ("admin", hash_pw("admin123"), "admin")
+    )
 
     conn.commit()
     conn.close()
@@ -137,9 +138,16 @@ def login():
         password = request.form.get("password", "").strip()
         conn = get_db()
         user = conn.execute(
-            "SELECT * FROM users WHERE username=? AND password=?",
-            (username, hash_pw(password))
-        ).fetchone()
+    "SELECT * FROM users WHERE username=?",
+    (username,)
+).fetchone()
+
+if user:
+    if user["password"] == hash_pw(password) or user["password"] == password:
+        session["user_id"] = user["id"]
+        session["username"] = user["username"]
+        session["role"] = user["role"]
+        return redirect("/dashboard")
         conn.close()
         if user:
             session["user_id"] = user["id"]
