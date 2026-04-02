@@ -276,8 +276,13 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
     <div class="nav-item" onclick="go('message',this)"><span class="nav-icon">✎</span><span class="nav-text">Message</span></div>
     <div class="nav-item" onclick="go('templates',this)"><span class="nav-icon">⊞</span><span class="nav-text">Templates</span></div>
     <div class="nav-item" onclick="go('settings',this)"><span class="nav-icon">⚙</span><span class="nav-text">Réglages</span></div>
+    <div id="admin-nav-item" style="display:none">
+      <div class="nav-group">Admin</div>
+      <div class="nav-item" onclick="go('admin',this)"><span class="nav-icon">👥</span><span class="nav-text">Utilisateurs</span></div>
+    </div>
   </nav>
   <div class="sidebar-footer">
+    <div style="padding:8px 16px;font-size:12px;opacity:0.5;color:#aaa">👤 <span id="sidebar-username"></span></div>
     <a href="/logout" class="nav-item" style="text-decoration:none"><span class="nav-icon">⇥</span><span class="nav-text">Déconnexion</span></a>
   </div>
 </aside>
