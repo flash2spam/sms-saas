@@ -2,7 +2,6 @@ from flask import Flask, render_template, request, redirect, session, jsonify
 import threading
 import bot
 import os
-import csv
 from functools import wraps
 
 app = Flask(__name__)
@@ -130,7 +129,7 @@ def change_password():
     return jsonify({"status": "ok"})
 
 
-# ===== BOT — chaque user a son propre contexte =====
+# ===== BOT =====
 @app.route("/start", methods=["POST"])
 @login_required
 def start():
@@ -258,7 +257,7 @@ def delete_template():
     return {"status": "ok"}
 
 
-# ===== SETTINGS — isolés par user =====
+# ===== SETTINGS =====
 @app.route("/set_settings", methods=["POST"])
 @login_required
 def settings():
@@ -270,7 +269,7 @@ def settings():
     return {"status": "ok"}
 
 
-# ===== UPLOAD CSV =====
+# ===== UPLOAD CSV — stocké en DB, plus de fichier temporaire =====
 @app.route("/upload", methods=["POST"])
 @login_required
 def upload():
@@ -278,10 +277,8 @@ def upload():
         file = request.files.get("file")
         if not file:
             return {"status": "error", "message": "Aucun fichier"}
-        os.makedirs("uploads", exist_ok=True)
-        path = bot.get_csv_path(uid())
-        file.save(path)
-        count = bot.csv_count(uid())
+        csv_content = file.read().decode("utf-8", errors="ignore")
+        count = bot.import_contacts_from_csv(csv_content, uid())
         return {"status": "ok", "count": count}
     except Exception as e:
         return {"status": "error", "message": str(e)}
@@ -306,34 +303,21 @@ def csv_status():
     }
 
 
-# ===== CONTACTS =====
+# ===== CONTACTS — depuis la DB =====
 @app.route("/contacts")
 @login_required
 def contacts():
-    path = bot.get_csv_path(uid())
-    if not os.path.exists(path):
-        return {"data": [], "count": 0}
-    try:
-        with open(path, newline="", encoding="utf-8") as f:
-            rows = list(csv.DictReader(f))
-        return {"data": rows[:200], "count": len(rows)}
-    except Exception:
-        return {"data": [], "count": 0}
+    rows = bot.get_contacts(uid(), limit=200)
+    count = bot.count_contacts(uid())
+    return {"data": rows, "count": count}
 
 
 @app.route("/delete_contact", methods=["POST"])
 @login_required
 def delete_contact():
     phone = request.json["phone"]
-    path = bot.get_csv_path(uid())
     try:
-        with open(path, newline="", encoding="utf-8") as f:
-            rows = list(csv.DictReader(f))
-        rows = [r for r in rows if r["phone"] != phone]
-        with open(path, "w", newline="", encoding="utf-8") as f:
-            writer = csv.DictWriter(f, fieldnames=["phone"])
-            writer.writeheader()
-            writer.writerows(rows)
+        bot.delete_single_contact(phone, uid())
         return {"status": "ok"}
     except Exception as e:
         return {"status": "error", "message": str(e)}
