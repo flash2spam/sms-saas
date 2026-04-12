@@ -5,16 +5,15 @@ import requests
 import csv
 import os
 import random
+import io
 
 DB = "data.db"
 
 # ===== CONTEXTE PAR UTILISATEUR =====
-# Chaque user a son propre état isolé
 _user_contexts = {}
 _ctx_lock = threading.Lock()
 
 def get_ctx(user_id):
-    """Retourne (ou crée) le contexte isolé d'un utilisateur."""
     with _ctx_lock:
         if user_id not in _user_contexts:
             _user_contexts[user_id] = {
@@ -30,10 +29,6 @@ def get_ctx(user_id):
             }
             _user_contexts[user_id]["pause_event"].set()
         return _user_contexts[user_id]
-
-
-def get_csv_path(user_id):
-    return f"uploads/contacts_{user_id}.csv"
 
 
 # ===== INIT DB =====
@@ -106,6 +101,17 @@ def init_db():
     )
     """)
 
+    # ✅ TABLE CONTACTS — stockage persistant en DB (plus de CSV temporaire)
+    c.execute("""
+    CREATE TABLE IF NOT EXISTS contacts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        phone TEXT NOT NULL,
+        UNIQUE(user_id, phone),
+        FOREIGN KEY(user_id) REFERENCES users(id)
+    )
+    """)
+
     conn.commit()
     conn.close()
 
@@ -163,13 +169,10 @@ def delete_user(user_id):
     c.execute("DELETE FROM blacklist WHERE user_id=?", (user_id,))
     c.execute("DELETE FROM history WHERE user_id=?", (user_id,))
     c.execute("DELETE FROM message_templates WHERE user_id=?", (user_id,))
+    c.execute("DELETE FROM contacts WHERE user_id=?", (user_id,))
     c.execute("DELETE FROM users WHERE id=?", (user_id,))
     conn.commit()
     conn.close()
-    csv_path = get_csv_path(user_id)
-    if os.path.exists(csv_path):
-        os.remove(csv_path)
-    # Nettoyer le contexte mémoire
     with _ctx_lock:
         _user_contexts.pop(user_id, None)
 
@@ -180,6 +183,82 @@ def update_user_password(user_id, new_password):
     c.execute("UPDATE users SET password=? WHERE id=?", (new_password, user_id))
     conn.commit()
     conn.close()
+
+
+# ===== CONTACTS DB =====
+def import_contacts_from_csv(csv_content, user_id):
+    """Importe les contacts depuis le contenu d'un CSV dans la DB."""
+    conn = sqlite3.connect(DB)
+    c = conn.cursor()
+    # Vider les anciens contacts de cet utilisateur
+    c.execute("DELETE FROM contacts WHERE user_id=?", (user_id,))
+    count = 0
+    reader = csv.DictReader(io.StringIO(csv_content))
+    for row in reader:
+        phone = row.get("phone", "").strip()
+        if phone:
+            try:
+                c.execute("INSERT OR IGNORE INTO contacts (user_id, phone) VALUES (?, ?)", (user_id, phone))
+                count += 1
+            except Exception:
+                pass
+    conn.commit()
+    conn.close()
+    return count
+
+
+def get_contacts(user_id, limit=200):
+    conn = sqlite3.connect(DB)
+    c = conn.cursor()
+    rows = c.execute(
+        "SELECT phone FROM contacts WHERE user_id=? ORDER BY id LIMIT ?",
+        (user_id, limit)
+    ).fetchall()
+    conn.close()
+    return [{"phone": r[0]} for r in rows]
+
+
+def count_contacts(user_id):
+    conn = sqlite3.connect(DB)
+    c = conn.cursor()
+    row = c.execute("SELECT COUNT(*) FROM contacts WHERE user_id=?", (user_id,)).fetchone()
+    conn.close()
+    return row[0] if row else 0
+
+
+def remove_phone_from_db(phone, user_id):
+    conn = sqlite3.connect(DB)
+    c = conn.cursor()
+    c.execute("DELETE FROM contacts WHERE phone=? AND user_id=?", (phone, user_id))
+    conn.commit()
+    conn.close()
+
+
+def delete_all_contacts(user_id):
+    conn = sqlite3.connect(DB)
+    c = conn.cursor()
+    c.execute("DELETE FROM contacts WHERE user_id=?", (user_id,))
+    conn.commit()
+    conn.close()
+
+
+def delete_single_contact(phone, user_id):
+    conn = sqlite3.connect(DB)
+    c = conn.cursor()
+    c.execute("DELETE FROM contacts WHERE phone=? AND user_id=?", (phone, user_id))
+    conn.commit()
+    conn.close()
+
+
+# Aliases pour compatibilité avec app.py
+def csv_exists(user_id):
+    return count_contacts(user_id) > 0
+
+def csv_count(user_id):
+    return count_contacts(user_id)
+
+def delete_csv(user_id):
+    delete_all_contacts(user_id)
 
 
 # ===== TEMPLATES =====
@@ -214,8 +293,7 @@ def get_random_message(user_id):
     templates = get_templates(user_id)
     if templates:
         return random.choice(templates)["content"]
-    ctx = get_ctx(user_id)
-    return ctx["MESSAGE_TEXT"]
+    return get_ctx(user_id)["MESSAGE_TEXT"]
 
 
 # ===== DEVICES =====
@@ -322,65 +400,30 @@ def get_history(user_id, filter_status=None, limit=100):
     return [{"phone": r[0], "device": r[1], "status": r[2], "timestamp": r[3]} for r in rows]
 
 
-# ===== CSV HELPERS =====
-def remove_phone_from_csv(phone, user_id):
-    csv_path = get_csv_path(user_id)
-    if not os.path.exists(csv_path):
-        return
-    try:
-        with open(csv_path, newline="", encoding="utf-8") as f:
-            rows = list(csv.DictReader(f))
-        remaining = [r for r in rows if r.get("phone", "").strip() != phone]
-        with open(csv_path, "w", newline="", encoding="utf-8") as f:
-            writer = csv.DictWriter(f, fieldnames=["phone"])
-            writer.writeheader()
-            writer.writerows(remaining)
-    except Exception as e:
-        print(f"⚠️  Erreur suppression CSV: {e}")
-
-
-def delete_csv(user_id):
-    csv_path = get_csv_path(user_id)
-    if os.path.exists(csv_path):
-        os.remove(csv_path)
-
-
-def csv_exists(user_id):
-    return os.path.exists(get_csv_path(user_id))
-
-
-def csv_count(user_id):
-    csv_path = get_csv_path(user_id)
-    if not os.path.exists(csv_path):
-        return 0
-    try:
-        with open(csv_path, newline="", encoding="utf-8") as f:
-            return sum(1 for _ in csv.DictReader(f))
-    except Exception:
-        return 0
-
-
 # ===== MAIN BOT =====
 def main(user_id):
     ctx = get_ctx(user_id)
     ctx["SUCCESS_COUNT"] = 0
     ctx["FAIL_COUNT"] = 0
 
-    csv_path = get_csv_path(user_id)
-    if not os.path.exists(csv_path):
-        print(f"❌ Pas de CSV pour user {user_id}")
+    total = count_contacts(user_id)
+    if total == 0:
+        print(f"❌ Pas de contacts pour user {user_id}")
         ctx["running"] = False
         return
 
-    with open(csv_path, newline="", encoding="utf-8") as f:
-        rows = list(csv.DictReader(f))
-
-    print(f"📋 {len(rows)} numéros chargés (user_id={user_id})")
+    print(f"📋 {total} numéros chargés (user_id={user_id})")
 
     index = 0
     session_sent = 0
 
-    for row in rows:
+    while ctx["running"]:
+        # Recharger les contacts restants à chaque tour
+        contacts_list = get_contacts(user_id)
+        if not contacts_list:
+            print(f"✅ Plus de contacts (user {user_id})")
+            break
+
         if not ctx["running"]:
             print(f"⛔ Bot arrêté (user {user_id})")
             break
@@ -396,13 +439,14 @@ def main(user_id):
         device = devices[index % len(devices)]
         index += 1
 
-        phone = row.get("phone", "").strip()
+        phone = contacts_list[0].get("phone", "").strip()
         if not phone:
+            remove_phone_from_db(phone, user_id)
             continue
 
         if is_blacklisted(phone, user_id):
             print(f"🚫 {phone} blacklisté — ignoré")
-            remove_phone_from_csv(phone, user_id)
+            remove_phone_from_db(phone, user_id)
             continue
 
         message = get_random_message(user_id)
@@ -427,7 +471,7 @@ def main(user_id):
                 update_device(device["name"], "success", device["success"] + 1, user_id)
                 update_device(device["name"], "sent", device["sent"] + 1, user_id)
                 add_history(phone, device["name"], "success", user_id)
-                remove_phone_from_csv(phone, user_id)
+                remove_phone_from_db(phone, user_id)
             else:
                 ctx["FAIL_COUNT"] += 1
                 update_device(device["name"], "fail", device["fail"] + 1, user_id)
