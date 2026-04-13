@@ -71,15 +71,12 @@ def init_db():
     )
     """)
 
-    # Migration si colonnes manquantes (DB existante)
-    try:
-        c.execute("ALTER TABLE devices ADD COLUMN type TEXT DEFAULT 'smsgate'")
-    except Exception:
-        pass
-    try:
-        c.execute("ALTER TABLE devices ADD COLUMN sid_cookie TEXT DEFAULT ''")
-    except Exception:
-        pass
+    # Migration si colonnes manquantes
+    for col, defval in [("type", "TEXT DEFAULT 'smsgate'"), ("sid_cookie", "TEXT DEFAULT ''")]:
+        try:
+            c.execute(f"ALTER TABLE devices ADD COLUMN {col} {defval}")
+        except Exception:
+            pass
 
     c.execute("""
     CREATE TABLE IF NOT EXISTS blacklist (
@@ -113,7 +110,6 @@ def init_db():
     )
     """)
 
-    # ✅ TABLE CONTACTS — stockage persistant en DB (plus de CSV temporaire)
     c.execute("""
     CREATE TABLE IF NOT EXISTS contacts (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -123,6 +119,38 @@ def init_db():
         FOREIGN KEY(user_id) REFERENCES users(id)
     )
     """)
+
+    # ===== TABLES TICKETS =====
+    c.execute("""
+    CREATE TABLE IF NOT EXISTS tickets (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        subject TEXT NOT NULL,
+        message TEXT NOT NULL,
+        status TEXT DEFAULT 'open',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(user_id) REFERENCES users(id)
+    )
+    """)
+
+    c.execute("""
+    CREATE TABLE IF NOT EXISTS ticket_replies (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        ticket_id INTEGER NOT NULL,
+        author_id INTEGER NOT NULL,
+        author TEXT NOT NULL,
+        role TEXT NOT NULL,
+        message TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(ticket_id) REFERENCES tickets(id)
+    )
+    """)
+
+    # read_by stocke les user_ids qui ont lu ce ticket (format CSV simple)
+    try:
+        c.execute("ALTER TABLE tickets ADD COLUMN read_by TEXT DEFAULT ''")
+    except Exception:
+        pass
 
     conn.commit()
     conn.close()
@@ -182,6 +210,7 @@ def delete_user(user_id):
     c.execute("DELETE FROM history WHERE user_id=?", (user_id,))
     c.execute("DELETE FROM message_templates WHERE user_id=?", (user_id,))
     c.execute("DELETE FROM contacts WHERE user_id=?", (user_id,))
+    c.execute("DELETE FROM tickets WHERE user_id=?", (user_id,))
     c.execute("DELETE FROM users WHERE id=?", (user_id,))
     conn.commit()
     conn.close()
@@ -199,10 +228,8 @@ def update_user_password(user_id, new_password):
 
 # ===== CONTACTS DB =====
 def import_contacts_from_csv(csv_content, user_id):
-    """Importe les contacts depuis le contenu d'un CSV dans la DB."""
     conn = sqlite3.connect(DB)
     c = conn.cursor()
-    # Vider les anciens contacts de cet utilisateur
     c.execute("DELETE FROM contacts WHERE user_id=?", (user_id,))
     count = 0
     reader = csv.DictReader(io.StringIO(csv_content))
@@ -262,7 +289,6 @@ def delete_single_contact(phone, user_id):
     conn.close()
 
 
-# Aliases pour compatibilité avec app.py
 def csv_exists(user_id):
     return count_contacts(user_id) > 0
 
@@ -352,10 +378,8 @@ def delete_device(name, user_id):
     conn.close()
 
 
-
 # ===== TEXTNOW SENDER =====
 def send_textnow(phone, message, username, sid_cookie):
-    """Envoie un SMS via TextNow — appel API direct sans librairie externe."""
     try:
         sess = requests.Session()
         sess.cookies.set("SID", sid_cookie, domain=".textnow.com")
@@ -448,6 +472,142 @@ def get_history(user_id, filter_status=None, limit=100):
     return [{"phone": r[0], "device": r[1], "status": r[2], "timestamp": r[3]} for r in rows]
 
 
+# ===== TICKETS =====
+def get_tickets(user_id, role):
+    conn = sqlite3.connect(DB)
+    c = conn.cursor()
+    if role == "admin":
+        rows = c.execute("""
+            SELECT t.id, t.user_id, u.username, t.subject, t.message, t.status, t.created_at, t.read_by,
+                   (SELECT COUNT(*) FROM ticket_replies WHERE ticket_id=t.id) as reply_count
+            FROM tickets t JOIN users u ON t.user_id=u.id
+            ORDER BY t.id DESC
+        """).fetchall()
+    else:
+        rows = c.execute("""
+            SELECT t.id, t.user_id, u.username, t.subject, t.message, t.status, t.created_at, t.read_by,
+                   (SELECT COUNT(*) FROM ticket_replies WHERE ticket_id=t.id) as reply_count
+            FROM tickets t JOIN users u ON t.user_id=u.id
+            WHERE t.user_id=?
+            ORDER BY t.id DESC
+        """, (user_id,)).fetchall()
+    conn.close()
+
+    result = []
+    for r in rows:
+        read_by = r[7] or ""
+        read_ids = [x for x in read_by.split(",") if x]
+        # unread: admin voit unread si non lu par admin, user voit unread si a une réponse admin non lue
+        unread = 0
+        if role == "admin" and str(user_id) not in read_ids:
+            unread = 1
+        elif role != "admin":
+            # compte les réponses admin non lues
+            uid_str = str(user_id)
+            if uid_str not in read_ids and r[8] > 0:
+                unread = 1
+        result.append({
+            "id": r[0], "user_id": r[1], "username": r[2],
+            "subject": r[3], "message": r[4], "status": r[5],
+            "created_at": r[6], "reply_count": r[8], "unread": unread
+        })
+    return result
+
+
+def get_ticket_by_id(ticket_id, user_id, role):
+    conn = sqlite3.connect(DB)
+    c = conn.cursor()
+    if role == "admin":
+        row = c.execute("""
+            SELECT t.id, t.user_id, u.username, t.subject, t.message, t.status, t.created_at
+            FROM tickets t JOIN users u ON t.user_id=u.id
+            WHERE t.id=?
+        """, (ticket_id,)).fetchone()
+    else:
+        row = c.execute("""
+            SELECT t.id, t.user_id, u.username, t.subject, t.message, t.status, t.created_at
+            FROM tickets t JOIN users u ON t.user_id=u.id
+            WHERE t.id=? AND t.user_id=?
+        """, (ticket_id, user_id)).fetchone()
+    conn.close()
+    if not row:
+        return None
+    return {
+        "id": row[0], "user_id": row[1], "username": row[2],
+        "subject": row[3], "message": row[4], "status": row[5], "created_at": row[6]
+    }
+
+
+def create_ticket(user_id, subject, message):
+    conn = sqlite3.connect(DB)
+    c = conn.cursor()
+    c.execute("INSERT INTO tickets (user_id, subject, message, status) VALUES (?, ?, ?, 'open')",
+              (user_id, subject, message))
+    conn.commit()
+    conn.close()
+
+
+def get_replies(ticket_id):
+    conn = sqlite3.connect(DB)
+    c = conn.cursor()
+    rows = c.execute(
+        "SELECT id, author, role, message, created_at FROM ticket_replies WHERE ticket_id=? ORDER BY id ASC",
+        (ticket_id,)
+    ).fetchall()
+    conn.close()
+    return [{"id": r[0], "author": r[1], "role": r[2], "message": r[3], "created_at": r[4]} for r in rows]
+
+
+def add_reply(ticket_id, author_id, author, role, message):
+    conn = sqlite3.connect(DB)
+    c = conn.cursor()
+    c.execute(
+        "INSERT INTO ticket_replies (ticket_id, author_id, author, role, message) VALUES (?, ?, ?, ?, ?)",
+        (ticket_id, author_id, author, role, message)
+    )
+    # Reset read_by quand une réponse est envoyée (force re-lecture)
+    c.execute("UPDATE tickets SET read_by='' WHERE id=?", (ticket_id,))
+    conn.commit()
+    conn.close()
+
+
+def update_ticket_status(ticket_id, status):
+    conn = sqlite3.connect(DB)
+    c = conn.cursor()
+    c.execute("UPDATE tickets SET status=? WHERE id=?", (status, ticket_id))
+    conn.commit()
+    conn.close()
+
+
+def mark_ticket_read(ticket_id, user_id, role):
+    conn = sqlite3.connect(DB)
+    c = conn.cursor()
+    row = c.execute("SELECT read_by FROM tickets WHERE id=?", (ticket_id,)).fetchone()
+    if row:
+        read_by = row[0] or ""
+        ids = [x for x in read_by.split(",") if x]
+        uid_str = str(user_id)
+        if uid_str not in ids:
+            ids.append(uid_str)
+        c.execute("UPDATE tickets SET read_by=? WHERE id=?", (",".join(ids), ticket_id))
+        conn.commit()
+    conn.close()
+
+
+def delete_ticket(ticket_id):
+    conn = sqlite3.connect(DB)
+    c = conn.cursor()
+    c.execute("DELETE FROM ticket_replies WHERE ticket_id=?", (ticket_id,))
+    c.execute("DELETE FROM tickets WHERE id=?", (ticket_id,))
+    conn.commit()
+    conn.close()
+
+
+def get_unread_count(user_id, role):
+    tickets = get_tickets(user_id, role)
+    return sum(1 for t in tickets if t["unread"] > 0)
+
+
 # ===== MAIN BOT =====
 def main(user_id):
     ctx = get_ctx(user_id)
@@ -466,7 +626,6 @@ def main(user_id):
     session_sent = 0
 
     while ctx["running"]:
-        # Recharger les contacts restants à chaque tour
         contacts_list = get_contacts(user_id)
         if not contacts_list:
             print(f"✅ Plus de contacts (user {user_id})")
@@ -498,10 +657,8 @@ def main(user_id):
             continue
 
         message = get_random_message(user_id)
-        print(f"💬 Template: {message[:40]}...")
 
         try:
-            # ===== ENVOI SELON LE TYPE DE DEVICE =====
             success = False
             if device.get("type") == "textnow":
                 success = send_textnow(phone, message, device["username"], device["sid_cookie"])
@@ -537,7 +694,6 @@ def main(user_id):
             ctx["FAIL_COUNT"] += 1
             add_history(phone, device["name"], "fail", user_id)
 
-        # Pause longue tous les PAUSE_EVERY SMS
         current_devices = get_devices(user_id)
         for d in current_devices:
             if d["name"] == device["name"] and d["sent"] > 0 and d["sent"] % ctx["PAUSE_EVERY"] == 0:
@@ -545,7 +701,6 @@ def main(user_id):
                 time.sleep(ctx["PAUSE_TIME"])
                 break
 
-        # Anti-ban toutes les 50 envois
         if session_sent > 0 and session_sent % 50 == 0:
             extra = random.randint(120, 300)
             print(f"🛡️  Anti-ban: pause {extra}s après 50 SMS")
