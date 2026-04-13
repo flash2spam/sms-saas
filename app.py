@@ -284,7 +284,7 @@ def settings():
     return {"status": "ok"}
 
 
-# ===== UPLOAD CSV — stocké en DB, plus de fichier temporaire =====
+# ===== UPLOAD CSV =====
 @app.route("/upload", methods=["POST"])
 @login_required
 def upload():
@@ -318,7 +318,7 @@ def csv_status():
     }
 
 
-# ===== CONTACTS — depuis la DB =====
+# ===== CONTACTS =====
 @app.route("/contacts")
 @login_required
 def contacts():
@@ -370,6 +370,85 @@ def history():
     filter_status = request.args.get("filter")
     data = bot.get_history(uid(), filter_status=filter_status, limit=100)
     return {"data": data}
+
+
+# ===== TICKETS SUPPORT =====
+@app.route("/tickets")
+@login_required
+def get_tickets():
+    user_id = uid()
+    role = session.get("role")
+    tickets = bot.get_tickets(user_id, role)
+    return jsonify({"tickets": tickets})
+
+
+@app.route("/tickets/create", methods=["POST"])
+@login_required
+def create_ticket():
+    d = request.get_json(force=True)
+    subject = d.get("subject", "").strip()
+    message = d.get("message", "").strip()
+    if not subject or not message:
+        return jsonify({"status": "error", "message": "Sujet et message requis"})
+    bot.create_ticket(uid(), subject, message)
+    return jsonify({"status": "ok"})
+
+
+@app.route("/tickets/<int:ticket_id>/replies")
+@login_required
+def get_ticket_replies(ticket_id):
+    user_id = uid()
+    role = session.get("role")
+    ticket = bot.get_ticket_by_id(ticket_id, user_id, role)
+    if not ticket:
+        return jsonify({"status": "error", "message": "Ticket introuvable"}), 404
+    replies = bot.get_replies(ticket_id)
+    # Marquer comme lu
+    bot.mark_ticket_read(ticket_id, user_id, role)
+    return jsonify({"ticket": ticket, "replies": replies})
+
+
+@app.route("/tickets/<int:ticket_id>/reply", methods=["POST"])
+@login_required
+def reply_ticket(ticket_id):
+    user_id = uid()
+    role = session.get("role")
+    ticket = bot.get_ticket_by_id(ticket_id, user_id, role)
+    if not ticket:
+        return jsonify({"status": "error", "message": "Ticket introuvable"}), 404
+    message = request.get_json(force=True).get("message", "").strip()
+    if not message:
+        return jsonify({"status": "error", "message": "Message vide"})
+    bot.add_reply(ticket_id, user_id, session.get("username"), role, message)
+    # Changer statut: si admin répond → answered, si user répond → open
+    new_status = "answered" if role == "admin" else "open"
+    bot.update_ticket_status(ticket_id, new_status)
+    return jsonify({"status": "ok"})
+
+
+@app.route("/tickets/<int:ticket_id>/close", methods=["POST"])
+@login_required
+def close_ticket(ticket_id):
+    if session.get("role") != "admin":
+        return jsonify({"status": "error", "message": "Admin requis"}), 403
+    bot.update_ticket_status(ticket_id, "closed")
+    return jsonify({"status": "ok"})
+
+
+@app.route("/tickets/<int:ticket_id>/delete", methods=["POST"])
+@login_required
+def delete_ticket(ticket_id):
+    if session.get("role") != "admin":
+        return jsonify({"status": "error", "message": "Admin requis"}), 403
+    bot.delete_ticket(ticket_id)
+    return jsonify({"status": "ok"})
+
+
+@app.route("/tickets/unread_count")
+@login_required
+def unread_count():
+    count = bot.get_unread_count(uid(), session.get("role"))
+    return jsonify({"count": count})
 
 
 # ===== RUN =====
