@@ -63,6 +63,7 @@ def init_db():
         username TEXT,
         password TEXT,
         sid_cookie TEXT DEFAULT '',
+        xsrf_token TEXT DEFAULT '',
         active INTEGER DEFAULT 1,
         success INTEGER DEFAULT 0,
         fail INTEGER DEFAULT 0,
@@ -71,8 +72,11 @@ def init_db():
     )
     """)
 
-    # Migration si colonnes manquantes
-    for col, defval in [("type", "TEXT DEFAULT 'smsgate'"), ("sid_cookie", "TEXT DEFAULT ''")]:
+    for col, defval in [
+        ("type", "TEXT DEFAULT 'smsgate'"),
+        ("sid_cookie", "TEXT DEFAULT ''"),
+        ("xsrf_token", "TEXT DEFAULT ''"),
+    ]:
         try:
             c.execute(f"ALTER TABLE devices ADD COLUMN {col} {defval}")
         except Exception:
@@ -120,7 +124,6 @@ def init_db():
     )
     """)
 
-    # ===== TABLES TICKETS =====
     c.execute("""
     CREATE TABLE IF NOT EXISTS tickets (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -146,7 +149,6 @@ def init_db():
     )
     """)
 
-    # read_by stocke les user_ids qui ont lu ce ticket (format CSV simple)
     try:
         c.execute("ALTER TABLE tickets ADD COLUMN read_by TEXT DEFAULT ''")
     except Exception:
@@ -335,13 +337,13 @@ def get_random_message(user_id):
 
 
 # ===== DEVICES =====
-def add_device(name, device_type, device_id, username, password, sid_cookie, user_id):
+def add_device(name, device_type, device_id, username, password, sid_cookie, user_id, xsrf_token=""):
     conn = sqlite3.connect(DB)
     c = conn.cursor()
     c.execute("""
-        INSERT INTO devices (user_id, name, type, device_id, username, password, sid_cookie, active, success, fail, sent)
-        VALUES (?, ?, ?, ?, ?, ?, ?, 1, 0, 0, 0)
-    """, (user_id, name, device_type, device_id, username, password, sid_cookie))
+        INSERT INTO devices (user_id, name, type, device_id, username, password, sid_cookie, xsrf_token, active, success, fail, sent)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, 0, 0, 0)
+    """, (user_id, name, device_type, device_id, username, password, sid_cookie, xsrf_token))
     conn.commit()
     conn.close()
 
@@ -350,15 +352,16 @@ def get_devices(user_id):
     conn = sqlite3.connect(DB)
     c = conn.cursor()
     rows = c.execute("""
-        SELECT id, user_id, name, type, device_id, username, password, sid_cookie, active, success, fail, sent
+        SELECT id, user_id, name, type, device_id, username, password, sid_cookie, xsrf_token, active, success, fail, sent
         FROM devices WHERE user_id=?
     """, (user_id,)).fetchall()
     conn.close()
     return [{
         "id": r[0], "user_id": r[1], "name": r[2], "type": r[3],
         "device_id": r[4], "username": r[5], "password": r[6],
-        "sid_cookie": r[7], "active": bool(r[8]),
-        "success": r[9], "fail": r[10], "sent": r[11]
+        "sid_cookie": r[7], "xsrf_token": r[8] or "",
+        "active": bool(r[9]),
+        "success": r[10], "fail": r[11], "sent": r[12]
     } for r in rows]
 
 
@@ -379,18 +382,23 @@ def delete_device(name, user_id):
 
 
 # ===== TEXTNOW SENDER =====
-def send_textnow(phone, message, username, sid_cookie):
+def send_textnow(phone, message, username, sid_cookie, xsrf_token=""):
     try:
         sess = requests.Session()
 
-        # Nom correct du cookie TextNow = connect.sid (pas SID)
+        # Cookie principal de session TextNow
         sess.cookies.set("connect.sid", sid_cookie, domain=".textnow.com")
+
+        # Cookie XSRF — requis pour valider les requêtes POST
+        if xsrf_token:
+            sess.cookies.set("XSRF-TOKEN", xsrf_token, domain=".textnow.com")
 
         sess.headers.update({
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
             "Referer": "https://www.textnow.com/messaging",
             "Origin": "https://www.textnow.com",
             "Content-Type": "application/json",
+            "X-XSRF-TOKEN": xsrf_token if xsrf_token else "",
         })
 
         payload = {
@@ -409,6 +417,8 @@ def send_textnow(phone, message, username, sid_cookie):
             timeout=30
         )
         print(f"📨 TextNow → {phone} | {r.status_code}")
+        if r.status_code >= 300:
+            print(f"   ↳ Réponse: {r.text[:300]}")
         return r.status_code < 300
 
     except Exception as e:
@@ -665,7 +675,12 @@ def main(user_id):
         try:
             success = False
             if device.get("type") == "textnow":
-                success = send_textnow(phone, message, device["username"], device["sid_cookie"])
+                success = send_textnow(
+                    phone, message,
+                    device["username"],
+                    device["sid_cookie"],
+                    device.get("xsrf_token", "")
+                )
             else:
                 r = requests.post(
                     "https://api.sms-gate.app/3rdparty/v1/message",
