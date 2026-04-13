@@ -382,12 +382,17 @@ def delete_device(name, user_id):
 def send_textnow(phone, message, username, sid_cookie):
     try:
         sess = requests.Session()
-        sess.cookies.set("SID", sid_cookie, domain=".textnow.com")
+
+        # Nom correct du cookie TextNow = connect.sid (pas SID)
+        sess.cookies.set("connect.sid", sid_cookie, domain=".textnow.com")
+
         sess.headers.update({
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
             "Referer": "https://www.textnow.com/messaging",
             "Origin": "https://www.textnow.com",
+            "Content-Type": "application/json",
         })
+
         payload = {
             "contact_value": phone,
             "contact_type": 2,
@@ -397,6 +402,7 @@ def send_textnow(phone, message, username, sid_cookie):
             "message_type": 1,
             "from_name": username,
         }
+
         r = sess.post(
             f"https://www.textnow.com/api/users/{username}/messages",
             json=payload,
@@ -404,6 +410,7 @@ def send_textnow(phone, message, username, sid_cookie):
         )
         print(f"📨 TextNow → {phone} | {r.status_code}")
         return r.status_code < 300
+
     except Exception as e:
         print(f"❌ TextNow ERREUR: {e}")
         return False
@@ -497,12 +504,10 @@ def get_tickets(user_id, role):
     for r in rows:
         read_by = r[7] or ""
         read_ids = [x for x in read_by.split(",") if x]
-        # unread: admin voit unread si non lu par admin, user voit unread si a une réponse admin non lue
         unread = 0
         if role == "admin" and str(user_id) not in read_ids:
             unread = 1
         elif role != "admin":
-            # compte les réponses admin non lues
             uid_str = str(user_id)
             if uid_str not in read_ids and r[8] > 0:
                 unread = 1
@@ -565,7 +570,6 @@ def add_reply(ticket_id, author_id, author, role, message):
         "INSERT INTO ticket_replies (ticket_id, author_id, author, role, message) VALUES (?, ?, ?, ?, ?)",
         (ticket_id, author_id, author, role, message)
     )
-    # Reset read_by quand une réponse est envoyée (force re-lecture)
     c.execute("UPDATE tickets SET read_by='' WHERE id=?", (ticket_id,))
     conn.commit()
     conn.close()
