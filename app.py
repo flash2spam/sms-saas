@@ -191,9 +191,24 @@ def devices():
 def add_device():
     try:
         d = request.get_json(force=True)
-        if not d.get("name") or not d.get("device_id"):
-            return {"status": "error", "message": "Champs manquants"}
-        bot.add_device(d["name"], d["device_id"], d.get("username", ""), d.get("password", ""), uid())
+        if not d.get("name"):
+            return {"status": "error", "message": "Nom manquant"}
+        device_type = d.get("type", "smsgate")
+        if device_type == "textnow":
+            if not d.get("username") or not d.get("sid_cookie"):
+                return {"status": "error", "message": "Username et cookie SID requis pour TextNow"}
+        else:
+            if not d.get("device_id"):
+                return {"status": "error", "message": "Device ID requis pour SMS Gate"}
+        bot.add_device(
+            d["name"],
+            device_type,
+            d.get("device_id", ""),
+            d.get("username", ""),
+            d.get("password", ""),
+            d.get("sid_cookie", ""),
+            uid()
+        )
         return {"status": "ok"}
     except Exception as e:
         return {"status": "error", "message": str(e)}
