@@ -6,6 +6,7 @@ import csv
 import os
 import random
 import io
+from urllib.parse import unquote
 
 DB = "data.db"
 
@@ -381,15 +382,15 @@ def delete_device(name, user_id):
     conn.close()
 
 
-# ===== TEXTNOW SENDER (FIXED) =====
+# ===== TEXTNOW SENDER — VERSION FINALE =====
 def send_textnow(phone, message, username, sid_cookie, xsrf_token=""):
     try:
         sess = requests.Session()
 
-        # Mettre les cookies de base
-        sess.cookies.set("connect.sid", sid_cookie, domain=".textnow.com")
-        if xsrf_token:
-            sess.cookies.set("XSRF-TOKEN", xsrf_token, domain=".textnow.com")
+        # URL-décoder le connect.sid (il arrive souvent encodé s%3A...)
+        decoded_sid = unquote(sid_cookie)
+
+        sess.cookies.set("connect.sid", decoded_sid, domain=".textnow.com")
 
         sess.headers.update({
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -397,33 +398,30 @@ def send_textnow(phone, message, username, sid_cookie, xsrf_token=""):
             "Origin": "https://www.textnow.com",
         })
 
-        # Étape 1 : faire un GET pour que TextNow génère un XSRF-TOKEN frais
+        # Étape 1 — charger /messaging pour que TextNow émette un XSRF-TOKEN frais
         try:
-            get_resp = sess.get(
-                f"https://www.textnow.com/api/users/{username}/messages",
-                params={
-                    "contact_value": phone,
-                    "contact_type": 2,
-                    "start_message_id": ""
-                },
-                timeout=30
-            )
-            # Récupérer le token frais depuis les cookies de la réponse
-            fresh_csrf = sess.cookies.get("XSRF-TOKEN", domain=".textnow.com")
-            if fresh_csrf:
-                csrf = fresh_csrf
-                print(f"🔑 CSRF frais récupéré: {csrf[:20]}...")
-            else:
-                csrf = xsrf_token
-                print(f"⚠️  Pas de CSRF frais, utilisation du token sauvegardé")
+            sess.get("https://www.textnow.com/messaging", timeout=30)
         except Exception as e:
-            print(f"⚠️  GET échoué, on continue quand même: {e}")
-            csrf = xsrf_token
+            print(f"⚠️  GET /messaging échoué: {e}")
 
-        # Étape 2 : envoyer le message avec le token CSRF valide
+        # Récupérer le token frais depuis les cookies de session
+        fresh_csrf_raw = sess.cookies.get("XSRF-TOKEN")
+
+        # Le token dans le cookie est URL-encodé, le header doit être URL-décodé
+        if fresh_csrf_raw:
+            csrf = unquote(fresh_csrf_raw)
+            print(f"🔑 CSRF frais (décodé): {csrf[:25]}...")
+        elif xsrf_token:
+            csrf = unquote(xsrf_token)
+            print(f"⚠️  CSRF fallback (décodé): {csrf[:25]}...")
+        else:
+            csrf = ""
+            print("❌ Aucun CSRF token disponible")
+
+        # Étape 2 — POST avec le token décodé dans le header X-XSRF-TOKEN
         sess.headers.update({
             "Content-Type": "application/json",
-            "X-XSRF-TOKEN": csrf if csrf else "",
+            "X-XSRF-TOKEN": csrf,
         })
 
         payload = {
