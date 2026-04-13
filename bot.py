@@ -58,9 +58,11 @@ def init_db():
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER NOT NULL DEFAULT 1,
         name TEXT,
+        type TEXT DEFAULT 'smsgate',
         device_id TEXT,
         username TEXT,
         password TEXT,
+        sid_cookie TEXT DEFAULT '',
         active INTEGER DEFAULT 1,
         success INTEGER DEFAULT 0,
         fail INTEGER DEFAULT 0,
@@ -68,6 +70,16 @@ def init_db():
         FOREIGN KEY(user_id) REFERENCES users(id)
     )
     """)
+
+    # Migration si colonnes manquantes (DB existante)
+    try:
+        c.execute("ALTER TABLE devices ADD COLUMN type TEXT DEFAULT 'smsgate'")
+    except Exception:
+        pass
+    try:
+        c.execute("ALTER TABLE devices ADD COLUMN sid_cookie TEXT DEFAULT ''")
+    except Exception:
+        pass
 
     c.execute("""
     CREATE TABLE IF NOT EXISTS blacklist (
@@ -297,13 +309,13 @@ def get_random_message(user_id):
 
 
 # ===== DEVICES =====
-def add_device(name, device_id, username, password, user_id):
+def add_device(name, device_type, device_id, username, password, sid_cookie, user_id):
     conn = sqlite3.connect(DB)
     c = conn.cursor()
     c.execute("""
-        INSERT INTO devices (user_id, name, device_id, username, password, active, success, fail, sent)
-        VALUES (?, ?, ?, ?, ?, 1, 0, 0, 0)
-    """, (user_id, name, device_id, username, password))
+        INSERT INTO devices (user_id, name, type, device_id, username, password, sid_cookie, active, success, fail, sent)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 1, 0, 0, 0)
+    """, (user_id, name, device_type, device_id, username, password, sid_cookie))
     conn.commit()
     conn.close()
 
@@ -311,13 +323,16 @@ def add_device(name, device_id, username, password, user_id):
 def get_devices(user_id):
     conn = sqlite3.connect(DB)
     c = conn.cursor()
-    rows = c.execute("SELECT * FROM devices WHERE user_id=?", (user_id,)).fetchall()
+    rows = c.execute("""
+        SELECT id, user_id, name, type, device_id, username, password, sid_cookie, active, success, fail, sent
+        FROM devices WHERE user_id=?
+    """, (user_id,)).fetchall()
     conn.close()
     return [{
-        "id": r[0], "user_id": r[1], "name": r[2], "device_id": r[3],
-        "username": r[4], "password": r[5],
-        "active": bool(r[6]), "success": r[7],
-        "fail": r[8], "sent": r[9]
+        "id": r[0], "user_id": r[1], "name": r[2], "type": r[3],
+        "device_id": r[4], "username": r[5], "password": r[6],
+        "sid_cookie": r[7], "active": bool(r[8]),
+        "success": r[9], "fail": r[10], "sent": r[11]
     } for r in rows]
 
 
@@ -335,6 +350,39 @@ def delete_device(name, user_id):
     c.execute("DELETE FROM devices WHERE name=? AND user_id=?", (name, user_id))
     conn.commit()
     conn.close()
+
+
+
+# ===== TEXTNOW SENDER =====
+def send_textnow(phone, message, username, sid_cookie):
+    """Envoie un SMS via TextNow — appel API direct sans librairie externe."""
+    try:
+        sess = requests.Session()
+        sess.cookies.set("SID", sid_cookie, domain=".textnow.com")
+        sess.headers.update({
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Referer": "https://www.textnow.com/messaging",
+            "Origin": "https://www.textnow.com",
+        })
+        payload = {
+            "contact_value": phone,
+            "contact_type": 2,
+            "message": message,
+            "read": 1,
+            "message_direction": 2,
+            "message_type": 1,
+            "from_name": username,
+        }
+        r = sess.post(
+            f"https://www.textnow.com/api/users/{username}/messages",
+            json=payload,
+            timeout=30
+        )
+        print(f"📨 TextNow → {phone} | {r.status_code}")
+        return r.status_code < 300
+    except Exception as e:
+        print(f"❌ TextNow ERREUR: {e}")
+        return False
 
 
 # ===== BLACKLIST =====
@@ -453,19 +501,25 @@ def main(user_id):
         print(f"💬 Template: {message[:40]}...")
 
         try:
-            r = requests.post(
-                "https://api.sms-gate.app/3rdparty/v1/message",
-                json={
-                    "device": device["device_id"],
-                    "phoneNumbers": [phone],
-                    "message": message
-                },
-                auth=(device["username"], device["password"]),
-                timeout=30
-            )
-            print(f"📨 {phone} | {r.status_code}")
+            # ===== ENVOI SELON LE TYPE DE DEVICE =====
+            success = False
+            if device.get("type") == "textnow":
+                success = send_textnow(phone, message, device["username"], device["sid_cookie"])
+            else:
+                r = requests.post(
+                    "https://api.sms-gate.app/3rdparty/v1/message",
+                    json={
+                        "device": device["device_id"],
+                        "phoneNumbers": [phone],
+                        "message": message
+                    },
+                    auth=(device["username"], device["password"]),
+                    timeout=30
+                )
+                print(f"📨 {phone} | {r.status_code}")
+                success = r.status_code < 300
 
-            if r.status_code < 300:
+            if success:
                 ctx["SUCCESS_COUNT"] += 1
                 session_sent += 1
                 update_device(device["name"], "success", device["success"] + 1, user_id)
