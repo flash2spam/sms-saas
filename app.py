@@ -208,7 +208,7 @@ def add_device():
             d.get("password", ""),
             d.get("sid_cookie", ""),
             uid(),
-            d.get("xsrf_token", "")   # ← nouveau champ XSRF
+            d.get("xsrf_token", "")
         )
         return {"status": "ok"}
     except Exception as e:
@@ -371,6 +371,34 @@ def history():
     filter_status = request.args.get("filter")
     data = bot.get_history(uid(), filter_status=filter_status, limit=100)
     return {"data": data}
+
+
+# ===== AUTO-REPLY =====
+@app.route("/autoreply/start", methods=["POST"])
+@login_required
+def autoreply_start():
+    d = request.get_json(force=True)
+    reply_message = d.get("message", "").strip()
+    interval = int(d.get("interval", 30))
+    if not reply_message:
+        return jsonify({"status": "error", "message": "Message de réponse vide"})
+    ok = bot.start_autoreply(uid(), reply_message, interval)
+    if ok:
+        return jsonify({"status": "ok"})
+    return jsonify({"status": "error", "message": "Aucun device TextNow actif trouvé"})
+
+
+@app.route("/autoreply/stop", methods=["POST"])
+@login_required
+def autoreply_stop():
+    bot.stop_autoreply(uid())
+    return jsonify({"status": "ok"})
+
+
+@app.route("/autoreply/status")
+@login_required
+def autoreply_status_route():
+    return jsonify({"active": bot.autoreply_status(uid())})
 
 
 # ===== TICKETS SUPPORT =====
