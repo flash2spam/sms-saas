@@ -175,6 +175,10 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
 .empty{text-align:center;padding:48px;color:var(--text-muted);}
 .empty-icon{font-size:28px;margin-bottom:12px;opacity:0.3;}.empty-text{font-size:12px;}
 ::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-thumb{background:var(--border-b);border-radius:4px;}
+/* AUTO-REPLY STATUS PILL */
+.ar-pill{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:20px;border:1px solid var(--border-b);background:var(--surface-2);font-size:11px;}
+.ar-dot{width:7px;height:7px;border-radius:50%;background:var(--text-muted);transition:all 0.3s;}
+.ar-dot.active{background:var(--success);box-shadow:0 0 8px var(--success);animation:blink 1.5s infinite;}
 </style>
 </head>
 <body>
@@ -267,7 +271,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
         <button class="type-tab active" id="tab-smsgate" onclick="switchDeviceType('smsgate')">📱 SMS Gate</button>
         <button class="type-tab" id="tab-textnow" onclick="switchDeviceType('textnow')">💬 TextNow</button>
       </div>
-      <!-- SMS Gate form -->
       <div id="form-smsgate">
         <div class="form-grid-2">
           <div class="field"><label class="field-label">Nom du device</label><input class="input" id="d-name" placeholder="ex: Samsung S22"></div>
@@ -276,7 +279,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
           <div class="field"><label class="field-label">Password SMS Gate</label><input class="input" id="d-pass" type="password" placeholder="••••••••"></div>
         </div>
       </div>
-      <!-- TextNow form -->
       <div id="form-textnow" style="display:none">
         <div style="background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.2);border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:12px;color:var(--text-muted);line-height:1.9">
           <strong style="color:var(--accent)">Comment récupérer tes cookies TextNow (Chrome) :</strong><br>
@@ -363,12 +365,43 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
   <!-- SETTINGS -->
   <div class="tab-section" id="tab-settings">
     <div class="sec-header"><div><div class="sec-title">Réglages</div></div><button class="btn btn-primary" onclick="saveSettings()">💾 Sauvegarder</button></div>
+
+    <!-- AUTO-REPLY TEXTNOW -->
+    <div class="panel">
+      <div class="panel-title">🤖 Auto-Reply TextNow</div>
+      <div style="background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.15);border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:12px;color:var(--text-muted);line-height:1.7">
+        📩 Répond automatiquement à toute personne qui t'envoie un SMS via TextNow.<br>
+        <strong style="color:var(--text)">Nécessite un device TextNow actif.</strong>
+      </div>
+      <div class="field">
+        <label class="field-label">Message de réponse automatique</label>
+        <textarea class="input" id="ar-msg" rows="3" placeholder="Ex: Merci pour votre réponse ! Voici le lien : ..."></textarea>
+      </div>
+      <div class="settings-row">
+        <div><div class="s-label">Vérifier toutes les X secondes</div><div class="s-desc">Fréquence de vérification des nouveaux messages</div></div>
+        <div class="settings-ctrl">
+          <div class="range-row">
+            <input type="range" min="10" max="120" value="30" id="ar-interval" oninput="document.getElementById('ar-interval-val').textContent=this.value+'s'">
+            <div class="range-val" id="ar-interval-val">30s</div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;margin-top:16px">
+        <button class="btn btn-success" onclick="startAutoreply()">▶ Activer</button>
+        <button class="btn btn-danger" onclick="stopAutoreply()">⏹ Désactiver</button>
+        <div class="ar-pill"><div class="ar-dot" id="ar-dot"></div><span id="ar-status-txt">Inactif</span></div>
+      </div>
+    </div>
+
+    <!-- TIMING -->
     <div class="panel">
       <div class="panel-title">Timing d'envoi</div>
       <div class="settings-row"><div><div class="s-label">Délai entre SMS (secondes)</div></div><div class="settings-ctrl"><div class="range-row"><input type="range" min="1" max="60" value="2" id="r-delay" oninput="document.getElementById('rv-delay').textContent=this.value+'s'"><div class="range-val" id="rv-delay">2s</div></div></div></div>
       <div class="settings-row"><div><div class="s-label">Pause après X SMS</div></div><div class="settings-ctrl"><div class="range-row"><input type="range" min="1" max="100" value="10" id="r-every" oninput="document.getElementById('rv-every').textContent=this.value"><div class="range-val" id="rv-every">10</div></div></div></div>
       <div class="settings-row"><div><div class="s-label">Durée de la pause (secondes)</div></div><div class="settings-ctrl"><div class="range-row"><input type="range" min="5" max="300" value="30" id="r-ptime" oninput="document.getElementById('rv-ptime').textContent=this.value+'s'"><div class="range-val" id="rv-ptime">30s</div></div></div></div>
     </div>
+
+    <!-- MON COMPTE -->
     <div class="panel">
       <div class="panel-title">Mon compte</div>
       <div style="display:flex;gap:10px;align-items:center">
@@ -483,6 +516,8 @@ document.addEventListener('DOMContentLoaded', () => {
   })
   loadDevices(); loadCsvStatus(); loadTemplates(); pollUnreadBadge()
   setInterval(pollUnreadBadge, 15000)
+  checkAutoreplyStatus()
+  setInterval(checkAutoreplyStatus, 5000)
 })
 
 function go(name, el) {
@@ -561,6 +596,40 @@ function botStart()  { fetch('/start', {method:'POST'}).then(()=>{setBotState('r
 function botPause()  { fetch('/pause', {method:'POST'}).then(()=>{setBotState('paused'); toast('⏸ En pause','i')}) }
 function botResume() { fetch('/resume',{method:'POST'}).then(()=>{setBotState('running');toast('▶ Repris','s')}) }
 function botStop()   { fetch('/stop',  {method:'POST'}).then(()=>{setBotState('stopped');toast('⏹ Bot arrêté','i')}) }
+
+// AUTO-REPLY
+function startAutoreply() {
+  const msg = document.getElementById('ar-msg').value.trim()
+  const interval = document.getElementById('ar-interval').value
+  if (!msg) { toast('Entre un message de réponse automatique', 'e'); return }
+  fetch('/autoreply/start', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({message:msg, interval:parseInt(interval)})})
+  .then(r=>r.json()).then(d=>{
+    if (d.status==='ok') { toast('🤖 Auto-reply activé !', 's'); checkAutoreplyStatus() }
+    else toast('❌ '+d.message, 'e')
+  })
+}
+function stopAutoreply() {
+  fetch('/autoreply/stop', {method:'POST'}).then(r=>r.json()).then(()=>{
+    toast('⏹ Auto-reply désactivé', 'i')
+    checkAutoreplyStatus()
+  })
+}
+function checkAutoreplyStatus() {
+  fetch('/autoreply/status').then(r=>r.json()).then(d=>{
+    const dot = document.getElementById('ar-dot')
+    const txt = document.getElementById('ar-status-txt')
+    if (!dot || !txt) return
+    if (d.active) {
+      dot.classList.add('active')
+      txt.textContent = 'Actif'
+      txt.style.color = 'var(--success)'
+    } else {
+      dot.classList.remove('active')
+      txt.textContent = 'Inactif'
+      txt.style.color = 'var(--text-muted)'
+    }
+  }).catch(()=>{})
+}
 
 // DEVICES
 function switchDeviceType(type) {
