@@ -89,7 +89,6 @@ textarea.input{resize:vertical;min-height:80px;line-height:1.6;}
 .device-stats{display:flex;gap:16px;margin-top:6px;font-size:11px;color:var(--text-muted);}
 .v-s{color:var(--success);}.v-f{color:var(--danger);}.v-a{color:var(--accent);}
 .device-actions{display:flex;gap:6px;flex-shrink:0;}
-/* Type selector */
 .type-tabs{display:flex;gap:8px;margin-bottom:16px;}
 .type-tab{padding:7px 18px;border-radius:6px;border:1px solid var(--border-b);background:transparent;color:var(--text-muted);cursor:pointer;font-family:'DM Mono',monospace;font-size:12px;transition:all 0.15s;}
 .type-tab.active{background:var(--accent-dim);border-color:rgba(0,212,255,0.4);color:var(--accent);}
@@ -130,7 +129,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
 .range-val{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--accent);min-width:40px;text-align:right;}
 .progress-bar{height:3px;background:var(--border-b);border-radius:4px;overflow:hidden;}
 .progress-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--accent),var(--success));transition:width 0.5s ease;}
-/* TICKETS */
 .ticket-list{display:flex;flex-direction:column;gap:10px;}
 .ticket-row{background:var(--surface-2);border:1px solid var(--border-b);border-radius:9px;padding:14px 18px;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:space-between;gap:16px;}
 .ticket-row:hover{border-color:var(--accent);background:rgba(0,212,255,0.04);}
@@ -265,7 +263,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
     <div class="sec-header"><div><div class="sec-title">Devices</div><div class="sec-sub">Gérez vos appareils d'envoi</div></div><button class="btn btn-primary" onclick="toggleForm()">+ Ajouter</button></div>
     <div class="panel" id="add-form" style="display:none">
       <div class="panel-title">Nouveau Device</div>
-      <!-- Type selector -->
       <div class="type-tabs">
         <button class="type-tab active" id="tab-smsgate" onclick="switchDeviceType('smsgate')">📱 SMS Gate</button>
         <button class="type-tab" id="tab-textnow" onclick="switchDeviceType('textnow')">💬 TextNow</button>
@@ -281,16 +278,19 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
       </div>
       <!-- TextNow form -->
       <div id="form-textnow" style="display:none">
-        <div style="background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.2);border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:12px;color:var(--text-muted);line-height:1.7">
-          <strong style="color:var(--accent)">Comment récupérer ton cookie SID TextNow :</strong><br>
+        <div style="background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.2);border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:12px;color:var(--text-muted);line-height:1.9">
+          <strong style="color:var(--accent)">Comment récupérer tes cookies TextNow (Chrome) :</strong><br>
           1. Connecte-toi sur <a href="https://www.textnow.com" target="_blank" style="color:var(--accent)">textnow.com</a><br>
-          2. Appuie sur F12 → onglet <strong>Application</strong> (Chrome) ou <strong>Stockage</strong> (Firefox)<br>
-          3. Cookies → https://www.textnow.com → cherche <strong>SID</strong> → copie la valeur
+          2. Appuie sur <strong style="color:var(--text)">F12</strong> → onglet <strong style="color:var(--text)">Application</strong><br>
+          3. Dans la colonne gauche : <strong style="color:var(--text)">Cookies → https://www.textnow.com</strong><br>
+          4. Cherche <strong style="color:var(--warn)">connect.sid</strong> → coche "Show URL-decoded" en bas → copie la valeur complète<br>
+          5. Cherche <strong style="color:var(--warn)">XSRF-TOKEN</strong> → copie aussi sa valeur
         </div>
         <div class="form-grid-2">
           <div class="field"><label class="field-label">Nom du device</label><input class="input" id="tn-name" placeholder="ex: TextNow-1"></div>
           <div class="field"><label class="field-label">Username TextNow</label><input class="input" id="tn-user" placeholder="ton_username_textnow"></div>
-          <div class="field" style="grid-column:span 2"><label class="field-label">Cookie SID</label><input class="input" id="tn-sid" placeholder="Colle ici la valeur du cookie SID..."></div>
+          <div class="field" style="grid-column:span 2"><label class="field-label">Cookie connect.sid</label><input class="input" id="tn-sid" placeholder="s:YndicqWD-L3mh2m... (valeur complète)"></div>
+          <div class="field" style="grid-column:span 2"><label class="field-label">Cookie XSRF-TOKEN</label><input class="input" id="tn-xsrf" placeholder="74ftUgxc-4U... (valeur complète)"></div>
         </div>
       </div>
       <div style="display:flex;gap:8px;margin-top:4px">
@@ -384,10 +384,11 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
     <div class="panel"><div class="panel-title">📱 Étape 1 — Installer SMS Gate</div><div style="line-height:1.8;color:var(--text-muted)"><p style="margin:0 0 12px">Installe <strong style="color:var(--text)">SMS Gate</strong> sur ton téléphone Android.</p><div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px"><a href="https://play.google.com/store/apps/details?id=me.capcom.smsgateway" target="_blank" class="btn btn-primary" style="text-decoration:none">▶ Google Play</a></div></div></div>
     <div class="panel"><div class="panel-title">🔑 Étape 2 — Créer un compte SMS Gate</div><div style="line-height:1.8;color:var(--text-muted)">Ouvre l'app → crée un compte → note le <strong style="color:var(--text)">Device ID</strong> affiché (ex: <code style="background:rgba(255,255,255,0.08);padding:2px 6px;border-radius:4px">android-xxxx</code>)</div></div>
     <div class="panel"><div class="panel-title">📡 Étape 3 — Ajouter le device</div><div style="line-height:1.8;color:var(--text-muted)">Va dans <strong style="color:var(--text)">Devices</strong> → <strong style="color:var(--text)">+ Ajouter</strong> → choisis <strong style="color:var(--text)">📱 SMS Gate</strong> → remplis Nom, Device ID, Username, Password.</div></div>
-    <div class="panel"><div class="panel-title">💬 Option TextNow (sans téléphone)</div><div style="line-height:1.8;color:var(--text-muted)"><p style="margin:0 0 12px">Crée un compte sur <a href="https://www.textnow.com" target="_blank" style="color:var(--accent)">textnow.com</a>. Récupère ton cookie SID (F12 → Application → Cookies → SID). Dans Devices → + Ajouter → choisis <strong style="color:var(--text)">💬 TextNow</strong>.</p><div style="background:rgba(255,170,0,0.08);border:1px solid rgba(255,170,0,0.2);border-radius:8px;padding:12px;font-size:12px;color:var(--warn)">⚠️ Les numéros TextNow sont VoIP — moins fiables que SMS Gate pour certains opérateurs.</div></div></div>
+    <div class="panel"><div class="panel-title">💬 Option TextNow (sans téléphone)</div><div style="line-height:1.8;color:var(--text-muted)"><p style="margin:0 0 12px">Crée un compte sur <a href="https://www.textnow.com" target="_blank" style="color:var(--accent)">textnow.com</a>. Dans Devices → + Ajouter → choisis <strong style="color:var(--text)">💬 TextNow</strong>.</p><p style="margin:0 0 12px">Pour les cookies : F12 → Application → Cookies → textnow.com → copie <strong style="color:var(--warn)">connect.sid</strong> et <strong style="color:var(--warn)">XSRF-TOKEN</strong>.</p><div style="background:rgba(255,170,0,0.08);border:1px solid rgba(255,170,0,0.2);border-radius:8px;padding:12px;font-size:12px;color:var(--warn)">⚠️ Les cookies expirent — si ça commence à échouer, récupère de nouveaux cookies.</div></div></div>
     <div class="panel"><div class="panel-title">📋 Étape 4 — Contacts CSV</div><div style="line-height:1.8;color:var(--text-muted)">Format requis :<br><code style="color:var(--accent)">phone<br>+15141234567<br>+15139876543</code></div></div>
     <div class="panel"><div class="panel-title">❓ Problèmes fréquents</div><div id="faq-container">
       <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this.parentElement)">📵 Device inactif / déconnecté <span class="faq-arr">▾</span></div><div class="faq-a">Vérifie que SMS Gate est ouverte. Désactive l'optimisation batterie pour l'app.</div></div>
+      <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this.parentElement)">❌ TextNow retourne 403 <span class="faq-arr">▾</span></div><div class="faq-a">Tes cookies ont expiré. Retourne sur textnow.com, connecte-toi, récupère les nouveaux cookies connect.sid et XSRF-TOKEN, supprime le device et recrée-le.</div></div>
       <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this.parentElement)">❌ Tous les SMS échouent <span class="faq-arr">▾</span></div><div class="faq-a">Vérifie Device ID, username et password. Augmente les pauses dans Réglages.</div></div>
       <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this.parentElement)">📂 CSV ne s'uploade pas <span class="faq-arr">▾</span></div><div class="faq-a">Première ligne doit être exactement <code>phone</code>. Enregistre en "CSV UTF-8" depuis Excel.</div></div>
       <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this.parentElement)">🔄 Bot s'arrête tout seul <span class="faq-arr">▾</span></div><div class="faq-a">Plus de contacts dans le CSV ou aucun device actif. Vérifie les deux.</div></div>
@@ -593,8 +594,9 @@ function addDevice(){
     const n=document.getElementById('tn-name').value.trim()
     const u=document.getElementById('tn-user').value.trim()
     const s=document.getElementById('tn-sid').value.trim()
-    if(!n||!u||!s){toast('Nom, username et cookie SID requis','e');return}
-    payload={name:n,type:'textnow',username:u,sid_cookie:s}
+    const x=document.getElementById('tn-xsrf').value.trim()
+    if(!n||!u||!s){toast('Nom, username et cookie connect.sid requis','e');return}
+    payload={name:n,type:'textnow',username:u,sid_cookie:s,xsrf_token:x}
   } else {
     const n=document.getElementById('d-name').value.trim()
     const d=document.getElementById('d-did').value.trim()
