@@ -21,8 +21,6 @@
 body{font-family:'DM Mono',monospace;background:var(--bg);color:var(--text);font-size:13px;overflow:hidden;}
 body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:40px 40px;opacity:0.25;pointer-events:none;z-index:0;}
 .layout{display:grid;grid-template-columns:var(--sidebar-w) 1fr;grid-template-rows:var(--topbar-h) 1fr;height:100vh;position:relative;z-index:1;}
-
-/* SIDEBAR */
 .sidebar{grid-row:1/3;background:var(--surface);border-right:1px solid var(--border-b);display:flex;flex-direction:column;}
 .sidebar-brand{padding:0 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;height:var(--topbar-h);flex-shrink:0;}
 .brand-icon{width:32px;height:32px;background:var(--accent-dim);border:1px solid rgba(0,212,255,0.4);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 0 12px var(--accent-glow);}
@@ -39,8 +37,6 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .nav-badge.show{display:block;}
 .sidebar-footer{padding:14px 10px;border-top:1px solid var(--border);flex-shrink:0;}
 .sidebar-footer .nav-item{color:var(--danger);}.sidebar-footer .nav-item:hover{background:var(--danger-dim);}
-
-/* TOPBAR */
 .topbar{background:var(--surface);border-bottom:1px solid var(--border-b);display:flex;align-items:center;justify-content:space-between;padding:0 24px;}
 .page-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;}
 .topbar-right{display:flex;align-items:center;gap:10px;}
@@ -49,12 +45,8 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .bot-dot.running{background:var(--success);box-shadow:0 0 8px var(--success);animation:blink 1.5s infinite;}
 .bot-dot.paused{background:var(--warn);}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
-
-/* CONTENT */
 .content{overflow-y:auto;padding:24px;}
 .tab-section{display:none;}.tab-section.active{display:block;}
-
-/* STATS */
 .stat-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:24px;}
 .stat-card{background:var(--surface);border:1px solid var(--border-b);border-radius:10px;padding:18px 20px;position:relative;overflow:hidden;transition:border-color 0.2s;}
 .stat-card:hover{border-color:var(--accent);}
@@ -67,38 +59,28 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .s-success .stat-value{color:var(--success);}.s-fail .stat-value{color:var(--danger);}
 .s-rate .stat-value{color:var(--accent);}.s-device .stat-value{color:var(--warn);}
 .s-remain .stat-value{color:#a855f7;}.stat-sub{font-size:10px;color:var(--text-muted);margin-top:6px;}
-
-/* CHART */
 .chart-card{background:var(--surface);border:1px solid var(--border-b);border-radius:10px;padding:20px;margin-bottom:24px;}
 .chart-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
 .chart-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;}
 .chart-legend{display:flex;gap:16px;font-size:11px;color:var(--text-dim);}
 .legend-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;}
-
-/* PANEL */
 .panel{background:var(--surface);border:1px solid var(--border-b);border-radius:10px;padding:20px;margin-bottom:16px;}
 .panel-title{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);color:var(--text-muted);letter-spacing:1.5px;text-transform:uppercase;}
 .sec-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;}
 .sec-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;}
 .sec-sub{font-size:11px;color:var(--text-muted);margin-top:3px;}
-
-/* BUTTONS */
 .btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:6px;border:none;cursor:pointer;font-family:'DM Mono',monospace;font-size:12px;transition:all 0.15s;white-space:nowrap;}
 .btn-primary{background:var(--accent);color:#000;font-weight:500;}.btn-primary:hover{box-shadow:0 0 20px var(--accent-glow);opacity:0.9;}
 .btn-success{background:var(--success);color:#000;}.btn-success:hover{box-shadow:0 0 20px rgba(0,232,122,0.3);opacity:0.9;}
 .btn-danger{background:var(--danger-dim);color:var(--danger);border:1px solid rgba(255,68,102,0.3);}.btn-danger:hover{background:var(--danger);color:white;}
 .btn-ghost{background:var(--surface-2);color:var(--text-dim);border:1px solid var(--border-b);}.btn-ghost:hover{color:var(--text);border-color:var(--accent);}
 .btn-warn{background:var(--warn-dim);color:var(--warn);border:1px solid rgba(255,170,0,0.3);}.btn-warn:hover{background:var(--warn);color:#000;}
-
-/* INPUTS */
 .input{background:var(--bg);border:1px solid var(--border-b);border-radius:7px;padding:9px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;outline:none;width:100%;transition:all 0.2s;}
 .input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim);}
 .input::placeholder{color:var(--text-muted);}
 textarea.input{resize:vertical;min-height:80px;line-height:1.6;}
 .field{margin-bottom:14px;}.field-label{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px;display:block;}
 .form-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-
-/* DEVICE */
 .device-card{background:var(--surface-2);border:1px solid var(--border-b);border-radius:9px;padding:14px 18px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:16px;transition:border-color 0.2s;}
 .device-card.dev-on{border-color:rgba(0,232,122,0.25);}
 .device-name{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px;}
@@ -107,27 +89,23 @@ textarea.input{resize:vertical;min-height:80px;line-height:1.6;}
 .device-stats{display:flex;gap:16px;margin-top:6px;font-size:11px;color:var(--text-muted);}
 .v-s{color:var(--success);}.v-f{color:var(--danger);}.v-a{color:var(--accent);}
 .device-actions{display:flex;gap:6px;flex-shrink:0;}
-
-/* TABLE */
+/* Type selector */
+.type-tabs{display:flex;gap:8px;margin-bottom:16px;}
+.type-tab{padding:7px 18px;border-radius:6px;border:1px solid var(--border-b);background:transparent;color:var(--text-muted);cursor:pointer;font-family:'DM Mono',monospace;font-size:12px;transition:all 0.15s;}
+.type-tab.active{background:var(--accent-dim);border-color:rgba(0,212,255,0.4);color:var(--accent);}
 .data-table{width:100%;border-collapse:collapse;}
 .data-table th{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-muted);padding:10px 12px;text-align:left;border-bottom:1px solid var(--border);background:var(--surface);}
 .data-table td{padding:10px 12px;border-bottom:1px solid var(--border);font-size:12px;color:var(--text-dim);}
 .data-table tr:hover td{background:rgba(255,255,255,0.015);color:var(--text);}
 .data-table tr:last-child td{border-bottom:none;}
-
-/* BADGES */
 .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11px;}
 .badge-s{background:var(--success-dim);color:var(--success);border:1px solid rgba(0,232,122,0.2);}
 .badge-f{background:var(--danger-dim);color:var(--danger);border:1px solid rgba(255,68,102,0.2);}
 .badge-w{background:var(--warn-dim);color:var(--warn);border:1px solid rgba(255,170,0,0.2);}
 .badge-i{background:var(--accent-dim);color:var(--accent);border:1px solid rgba(0,212,255,0.2);}
-
-/* FILTER TABS */
 .filter-tabs{display:flex;gap:6px;margin-bottom:16px;}
 .filter-tab{padding:6px 14px;border-radius:6px;border:1px solid var(--border-b);background:transparent;color:var(--text-muted);cursor:pointer;font-family:'DM Mono',monospace;font-size:11px;transition:all 0.15s;}
 .filter-tab:hover,.filter-tab.active{background:var(--accent-dim);border-color:rgba(0,212,255,0.3);color:var(--accent);}
-
-/* CSV */
 .csv-status-card{background:var(--surface-2);border:1px solid var(--border-b);border-radius:10px;padding:18px 20px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:16px;}
 .csv-status-card.csv-loaded{border-color:rgba(0,232,122,0.3);}
 .csv-status-card.csv-empty{border-color:rgba(255,68,102,0.2);}
@@ -142,8 +120,6 @@ textarea.input{resize:vertical;min-height:80px;line-height:1.6;}
 .upload-zone:hover,.upload-zone.drag{border-color:var(--accent);background:var(--accent-dim);color:var(--accent);}
 .upload-zone input{display:none;}
 .upload-icon{font-size:28px;margin-bottom:10px;}.upload-text{font-size:13px;margin-bottom:4px;}.upload-sub{font-size:11px;opacity:0.6;}
-
-/* SETTINGS */
 .settings-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border);gap:24px;}
 .settings-row:last-child{border-bottom:none;}
 .s-label{font-size:12px;color:var(--text);margin-bottom:2px;}.s-desc{font-size:11px;color:var(--text-muted);}
@@ -154,39 +130,20 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
 .range-val{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--accent);min-width:40px;text-align:right;}
 .progress-bar{height:3px;background:var(--border-b);border-radius:4px;overflow:hidden;}
 .progress-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--accent),var(--success));transition:width 0.5s ease;}
-
-/* ══════════════════════════════════════
-   TICKET SYSTEM
-══════════════════════════════════════ */
+/* TICKETS */
 .ticket-list{display:flex;flex-direction:column;gap:10px;}
-
-.ticket-row{
-  background:var(--surface-2);border:1px solid var(--border-b);border-radius:9px;
-  padding:14px 18px;cursor:pointer;transition:all 0.15s;
-  display:flex;align-items:center;justify-content:space-between;gap:16px;
-}
+.ticket-row{background:var(--surface-2);border:1px solid var(--border-b);border-radius:9px;padding:14px 18px;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:space-between;gap:16px;}
 .ticket-row:hover{border-color:var(--accent);background:rgba(0,212,255,0.04);}
 .ticket-row.has-unread{border-color:rgba(0,212,255,0.4);background:rgba(0,212,255,0.05);}
-
 .ticket-left{flex:1;min-width:0;}
 .ticket-subject{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:8px;}
 .ticket-meta{font-size:11px;color:var(--text-muted);}
 .ticket-right{display:flex;align-items:center;gap:8px;flex-shrink:0;}
-
 .unread-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 6px var(--accent);flex-shrink:0;}
-
-/* TICKET CONVERSATION VIEW */
-.ticket-view{display:none;}
-.ticket-view.open{display:block;}
-.ticket-list-wrap{display:block;}
-.ticket-list-wrap.hidden{display:none;}
-
 .ticket-header{display:flex;align-items:center;gap:12px;margin-bottom:20px;}
 .back-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:6px;border:1px solid var(--border-b);background:var(--surface-2);cursor:pointer;font-size:12px;color:var(--text-dim);transition:all 0.15s;}
 .back-btn:hover{color:var(--text);border-color:var(--accent);}
 .ticket-view-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;flex:1;}
-
-/* MESSAGES */
 .messages-wrap{display:flex;flex-direction:column;gap:12px;margin-bottom:16px;max-height:420px;overflow-y:auto;padding:4px 0;}
 .msg-bubble{max-width:75%;padding:12px 16px;border-radius:10px;font-size:13px;line-height:1.6;}
 .msg-bubble.from-user{background:var(--surface-2);border:1px solid var(--border-b);align-self:flex-start;}
@@ -194,36 +151,10 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
 .msg-meta{font-size:10px;color:var(--text-muted);margin-top:5px;display:flex;align-items:center;gap:6px;}
 .msg-author{font-weight:600;color:var(--text-dim);}
 .msg-admin-tag{background:rgba(255,170,0,0.2);color:var(--warn);padding:1px 6px;border-radius:4px;font-size:9px;font-weight:700;}
-
-/* ORIGINAL MSG */
 .original-msg{background:var(--surface-2);border:1px solid var(--border-b);border-radius:8px;padding:14px 16px;margin-bottom:16px;font-size:13px;line-height:1.6;color:var(--text-dim);}
 .original-msg-label{font-size:10px;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;}
-
-/* REPLY BOX */
 .reply-box{background:var(--surface-2);border:1px solid var(--border-b);border-radius:10px;padding:16px;}
 .reply-box-title{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;}
-
-/* TOAST */
-.toast-wrap{position:fixed;bottom:24px;right:24px;display:flex;flex-direction:column;gap:8px;z-index:9999;}
-.toast{padding:12px 18px;border-radius:8px;font-size:12px;display:flex;align-items:center;gap:8px;min-width:220px;animation:tIn 0.3s ease;}
-.t-s{background:#0a2818;border:1px solid rgba(0,232,122,0.3);color:var(--success);}
-.t-e{background:#2a0a12;border:1px solid rgba(255,68,102,0.3);color:var(--danger);}
-.t-i{background:#0a1a2a;border:1px solid rgba(0,212,255,0.3);color:var(--accent);}
-@keyframes tIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
-
-/* MODAL */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:100;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
-.modal-overlay.open{display:flex;}
-.modal{background:var(--surface);border:1px solid var(--border-b);border-radius:12px;padding:28px;max-width:380px;width:90%;text-align:center;}
-.modal-icon{font-size:32px;margin-bottom:12px;}.modal-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin-bottom:8px;}
-.modal-desc{font-size:12px;color:var(--text-muted);line-height:1.6;margin-bottom:24px;}
-.modal-actions{display:flex;gap:10px;justify-content:center;}
-
-/* EMPTY */
-.empty{text-align:center;padding:48px;color:var(--text-muted);}
-.empty-icon{font-size:28px;margin-bottom:12px;opacity:0.3;}.empty-text{font-size:12px;}
-
-/* FAQ */
 .faq-item{border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:4px;}
 .faq-q{padding:14px 16px;cursor:pointer;font-size:13px;font-weight:600;color:var(--text);display:flex;justify-content:space-between;align-items:center;user-select:none;transition:background 0.15s;}
 .faq-q:hover{background:rgba(255,255,255,0.03);}
@@ -231,18 +162,30 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
 .faq-item.open .faq-arr{transform:rotate(180deg);}
 .faq-a{display:none;padding:0 16px 14px;font-size:13px;color:var(--text-muted);line-height:1.7;border-top:1px solid var(--border);}
 .faq-item.open .faq-a{display:block;}
-
+.toast-wrap{position:fixed;bottom:24px;right:24px;display:flex;flex-direction:column;gap:8px;z-index:9999;}
+.toast{padding:12px 18px;border-radius:8px;font-size:12px;display:flex;align-items:center;gap:8px;min-width:220px;animation:tIn 0.3s ease;}
+.t-s{background:#0a2818;border:1px solid rgba(0,232,122,0.3);color:var(--success);}
+.t-e{background:#2a0a12;border:1px solid rgba(255,68,102,0.3);color:var(--danger);}
+.t-i{background:#0a1a2a;border:1px solid rgba(0,212,255,0.3);color:var(--accent);}
+@keyframes tIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:100;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border-b);border-radius:12px;padding:28px;max-width:380px;width:90%;text-align:center;}
+.modal-icon{font-size:32px;margin-bottom:12px;}.modal-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin-bottom:8px;}
+.modal-desc{font-size:12px;color:var(--text-muted);line-height:1.6;margin-bottom:24px;}
+.modal-actions{display:flex;gap:10px;justify-content:center;}
+.empty{text-align:center;padding:48px;color:var(--text-muted);}
+.empty-icon{font-size:28px;margin-bottom:12px;opacity:0.3;}.empty-text{font-size:12px;}
 ::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-thumb{background:var(--border-b);border-radius:4px;}
 </style>
 </head>
 <body>
 
-<!-- MODAL CSV -->
 <div class="modal-overlay" id="modal">
   <div class="modal">
     <div class="modal-icon">🗑️</div>
     <div class="modal-title">Supprimer le fichier CSV ?</div>
-    <div class="modal-desc">Cette action est irréversible. Le fichier de contacts sera supprimé définitivement.</div>
+    <div class="modal-desc">Cette action est irréversible.</div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal()">Annuler</button>
       <button class="btn btn-danger" onclick="confirmDeleteCSV()">Supprimer</button>
@@ -254,7 +197,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
 
 <div class="layout">
 
-<!-- SIDEBAR -->
 <aside class="sidebar">
   <div class="sidebar-brand">
     <div class="brand-icon">📡</div>
@@ -289,7 +231,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
   </div>
 </aside>
 
-<!-- TOPBAR -->
 <header class="topbar">
   <div class="page-title" id="page-title">Dashboard</div>
   <div class="topbar-right">
@@ -301,7 +242,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
   </div>
 </header>
 
-<!-- CONTENT -->
 <main class="content">
 
   <!-- DASHBOARD -->
@@ -325,20 +265,45 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
     <div class="sec-header"><div><div class="sec-title">Devices</div><div class="sec-sub">Gérez vos appareils d'envoi</div></div><button class="btn btn-primary" onclick="toggleForm()">+ Ajouter</button></div>
     <div class="panel" id="add-form" style="display:none">
       <div class="panel-title">Nouveau Device</div>
-      <div class="form-grid-2">
-        <div class="field"><label class="field-label">Nom</label><input class="input" id="d-name" placeholder="ex: Samsung S22"></div>
-        <div class="field"><label class="field-label">Device ID</label><input class="input" id="d-did" placeholder="XWnu4Pi..."></div>
-        <div class="field"><label class="field-label">Username API</label><input class="input" id="d-user" placeholder="HHOSMF"></div>
-        <div class="field"><label class="field-label">Password API</label><input class="input" id="d-pass" type="password" placeholder="••••••••"></div>
+      <!-- Type selector -->
+      <div class="type-tabs">
+        <button class="type-tab active" id="tab-smsgate" onclick="switchDeviceType('smsgate')">📱 SMS Gate</button>
+        <button class="type-tab" id="tab-textnow" onclick="switchDeviceType('textnow')">💬 TextNow</button>
       </div>
-      <div style="display:flex;gap:8px"><button class="btn btn-primary" onclick="addDevice()">Ajouter</button><button class="btn btn-ghost" onclick="toggleForm()">Annuler</button></div>
+      <!-- SMS Gate form -->
+      <div id="form-smsgate">
+        <div class="form-grid-2">
+          <div class="field"><label class="field-label">Nom du device</label><input class="input" id="d-name" placeholder="ex: Samsung S22"></div>
+          <div class="field"><label class="field-label">Device ID</label><input class="input" id="d-did" placeholder="android-xxxx-xxxx"></div>
+          <div class="field"><label class="field-label">Username SMS Gate</label><input class="input" id="d-user" placeholder="email@exemple.com"></div>
+          <div class="field"><label class="field-label">Password SMS Gate</label><input class="input" id="d-pass" type="password" placeholder="••••••••"></div>
+        </div>
+      </div>
+      <!-- TextNow form -->
+      <div id="form-textnow" style="display:none">
+        <div style="background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.2);border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:12px;color:var(--text-muted);line-height:1.7">
+          <strong style="color:var(--accent)">Comment récupérer ton cookie SID TextNow :</strong><br>
+          1. Connecte-toi sur <a href="https://www.textnow.com" target="_blank" style="color:var(--accent)">textnow.com</a><br>
+          2. Appuie sur F12 → onglet <strong>Application</strong> (Chrome) ou <strong>Stockage</strong> (Firefox)<br>
+          3. Cookies → https://www.textnow.com → cherche <strong>SID</strong> → copie la valeur
+        </div>
+        <div class="form-grid-2">
+          <div class="field"><label class="field-label">Nom du device</label><input class="input" id="tn-name" placeholder="ex: TextNow-1"></div>
+          <div class="field"><label class="field-label">Username TextNow</label><input class="input" id="tn-user" placeholder="ton_username_textnow"></div>
+          <div class="field" style="grid-column:span 2"><label class="field-label">Cookie SID</label><input class="input" id="tn-sid" placeholder="Colle ici la valeur du cookie SID..."></div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:4px">
+        <button class="btn btn-primary" onclick="addDevice()">Ajouter</button>
+        <button class="btn btn-ghost" onclick="toggleForm()">Annuler</button>
+      </div>
     </div>
     <div id="dev-list"><div class="empty"><div class="empty-icon">◈</div><div class="empty-text">Aucun device.</div></div></div>
   </div>
 
   <!-- CONTACTS -->
   <div class="tab-section" id="tab-contacts">
-    <div class="sec-header"><div><div class="sec-title">Contacts <span id="ct-count" style="font-size:12px;color:var(--text-muted);font-weight:400"></span></div><div class="sec-sub">Colonne "phone" obligatoire · Numéros supprimés après envoi réussi</div></div></div>
+    <div class="sec-header"><div><div class="sec-title">Contacts <span id="ct-count" style="font-size:12px;color:var(--text-muted);font-weight:400"></span></div><div class="sec-sub">Colonne "phone" obligatoire</div></div></div>
     <div class="csv-status-card csv-empty" id="csv-card">
       <div class="csv-info"><div class="csv-dot empty" id="csv-dot"></div><div><div class="csv-name" id="csv-name">Aucun fichier chargé</div><div class="csv-meta" id="csv-meta">Uploadez un CSV pour commencer</div></div></div>
       <div class="csv-actions">
@@ -348,7 +313,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
     </div>
     <div id="upload-zone-wrap"><div class="upload-zone" id="upzone" onclick="document.getElementById('csv-in').click()"><div class="upload-icon">⬆</div><div class="upload-text" id="upzone-text">Glisser-déposer ou cliquer</div><div class="upload-sub">Format CSV · Colonne "phone"</div></div></div>
     <br>
-    <div class="panel" style="padding:0;overflow:hidden"><table class="data-table"><thead><tr><th>Numéro</th><th style="text-align:right">Actions</th></tr></thead><tbody id="ct-list"><tr><td colspan="2" style="text-align:center;padding:32px;color:var(--text-muted)">Aucun contact.</td></tr></tbody></table></div>
+    <div class="panel" style="padding:0;overflow:hidden"><table class="data-table"><thead><tr><th>Numéro</th><th style="text-align:right">Actions</th></tr></thead><tbody id="ct-list"></tbody></table></div>
   </div>
 
   <!-- BLACKLIST -->
@@ -382,37 +347,27 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
 
   <!-- TEMPLATES -->
   <div class="tab-section" id="tab-templates">
-    <div class="sec-header"><div><div class="sec-title">Templates</div><div class="sec-sub">Le bot choisit un template aléatoire à chaque envoi — réduit les blocages opérateurs</div></div></div>
-    <div style="background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.2);border-radius:10px;padding:14px 18px;margin-bottom:16px;display:flex;gap:12px">
-      <span style="font-size:18px">🛡️</span>
-      <div style="font-size:12px;color:var(--text-muted);line-height:1.7">Varier le texte de chaque SMS réduit drastiquement la détection spam. Si aucun template n'est défini, le message par défaut est utilisé.</div>
-    </div>
+    <div class="sec-header"><div><div class="sec-title">Templates</div><div class="sec-sub">Le bot choisit un template aléatoire à chaque envoi</div></div></div>
     <div class="panel">
       <div class="panel-title">Ajouter un template</div>
-      <div class="field"><textarea class="input" id="tpl-txt" rows="4" placeholder="Ex: Votre paiement Gigadat est disponible. Cliquez ici: [lien]"></textarea></div>
+      <div class="field"><textarea class="input" id="tpl-txt" rows="4" placeholder="Ex: Votre paiement est disponible..."></textarea></div>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">
         <div style="font-size:11px;color:var(--text-muted)">Caractères : <span id="tpl-count" style="color:var(--accent)">0</span> / 160</div>
         <button class="btn btn-primary" onclick="addTemplate()">+ Ajouter</button>
       </div>
       <div class="progress-bar" style="margin-top:10px"><div class="progress-fill" id="tpl-bar" style="width:0%"></div></div>
     </div>
-    <div class="panel"><div class="panel-title">Templates actifs <span id="tpl-count-badge" style="color:var(--accent)"></span></div><div id="tpl-list"><div class="empty"><div class="empty-icon">⊞</div><div class="empty-text">Aucun template. Ajoutez-en au moins 3.</div></div></div></div>
+    <div class="panel"><div class="panel-title">Templates actifs <span id="tpl-count-badge" style="color:var(--accent)"></span></div><div id="tpl-list"><div class="empty"><div class="empty-icon">⊞</div><div class="empty-text">Aucun template.</div></div></div></div>
   </div>
 
   <!-- SETTINGS -->
   <div class="tab-section" id="tab-settings">
-    <div class="sec-header"><div><div class="sec-title">Réglages</div><div class="sec-sub">Timing et comportement du bot</div></div><button class="btn btn-primary" onclick="saveSettings()">💾 Sauvegarder</button></div>
+    <div class="sec-header"><div><div class="sec-title">Réglages</div></div><button class="btn btn-primary" onclick="saveSettings()">💾 Sauvegarder</button></div>
     <div class="panel">
       <div class="panel-title">Timing d'envoi</div>
-      <div class="settings-row"><div><div class="s-label">Délai entre SMS (secondes)</div><div class="s-desc">Temps minimal entre deux envois</div></div><div class="settings-ctrl"><div class="range-row"><input type="range" min="1" max="60" value="2" id="r-delay" oninput="document.getElementById('rv-delay').textContent=this.value+'s'"><div class="range-val" id="rv-delay">2s</div></div></div></div>
-      <div class="settings-row"><div><div class="s-label">Pause après X SMS</div><div class="s-desc">Pause auto après ce nombre d'envois</div></div><div class="settings-ctrl"><div class="range-row"><input type="range" min="1" max="100" value="10" id="r-every" oninput="document.getElementById('rv-every').textContent=this.value"><div class="range-val" id="rv-every">10</div></div></div></div>
-      <div class="settings-row"><div><div class="s-label">Durée de la pause (secondes)</div><div class="s-desc">Temps d'attente lors de la pause auto</div></div><div class="settings-ctrl"><div class="range-row"><input type="range" min="5" max="300" value="30" id="r-ptime" oninput="document.getElementById('rv-ptime').textContent=this.value+'s'"><div class="range-val" id="rv-ptime">30s</div></div></div></div>
-    </div>
-    <div class="panel">
-      <div class="panel-title">Anti-ban</div>
-      <div class="settings-row"><div><div class="s-label">Rotation des templates</div><div class="s-desc">Texte différent à chaque envoi</div></div><div><span class="badge badge-s">✓ Actif</span></div></div>
-      <div class="settings-row"><div><div class="s-label">Délai aléatoire</div><div class="s-desc">Variation aléatoire ajoutée au délai</div></div><div><span class="badge badge-s">✓ Actif</span></div></div>
-      <div class="settings-row"><div><div class="s-label">Suppression anti-doublon</div><div class="s-desc">Numéro retiré du CSV après envoi réussi</div></div><div><span class="badge badge-s">✓ Actif</span></div></div>
+      <div class="settings-row"><div><div class="s-label">Délai entre SMS (secondes)</div></div><div class="settings-ctrl"><div class="range-row"><input type="range" min="1" max="60" value="2" id="r-delay" oninput="document.getElementById('rv-delay').textContent=this.value+'s'"><div class="range-val" id="rv-delay">2s</div></div></div></div>
+      <div class="settings-row"><div><div class="s-label">Pause après X SMS</div></div><div class="settings-ctrl"><div class="range-row"><input type="range" min="1" max="100" value="10" id="r-every" oninput="document.getElementById('rv-every').textContent=this.value"><div class="range-val" id="rv-every">10</div></div></div></div>
+      <div class="settings-row"><div><div class="s-label">Durée de la pause (secondes)</div></div><div class="settings-ctrl"><div class="range-row"><input type="range" min="5" max="300" value="30" id="r-ptime" oninput="document.getElementById('rv-ptime').textContent=this.value+'s'"><div class="range-val" id="rv-ptime">30s</div></div></div></div>
     </div>
     <div class="panel">
       <div class="panel-title">Mon compte</div>
@@ -425,217 +380,50 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
 
   <!-- GUIDE -->
   <div class="tab-section" id="tab-guide">
-    <div class="sec-header">
-      <div><div class="sec-title">Guide d'utilisation</div><div class="sec-sub">Comment configurer et utiliser le bot SMS</div></div>
-    </div>
-
-    <div class="panel">
-      <div class="panel-title">📱 Étape 1 — Installer l'app sur ton téléphone</div>
-      <div style="line-height:1.8;color:var(--text-muted)">
-        <p style="margin:0 0 12px">Le bot envoie les SMS depuis ton téléphone Android via l'application <strong style="color:var(--text)">SMS Gate</strong>. Tu dois l'installer sur chaque téléphone que tu veux utiliser.</p>
-        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px">
-          <a href="https://play.google.com/store/apps/details?id=me.capcom.smsgateway" target="_blank" class="btn btn-primary" style="text-decoration:none">▶ Télécharger sur Google Play</a>
-          <a href="https://sms-gate.app" target="_blank" class="btn btn-ghost" style="text-decoration:none">🌐 Site officiel</a>
-        </div>
-        <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:14px;border:1px solid var(--border)">
-          <div style="font-size:12px;font-weight:700;color:var(--text-muted);letter-spacing:1px;margin-bottom:8px">⚠️ REQUIS</div>
-          <ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px">
-            <li>Téléphone Android uniquement (pas iOS)</li>
-            <li>Une carte SIM active avec forfait SMS inclus</li>
-            <li>L'app doit rester ouverte en arrière-plan</li>
-            <li>Désactiver l'optimisation de batterie pour l'app</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-
-    <div class="panel">
-      <div class="panel-title">🔑 Étape 2 — Créer un compte SMS Gate</div>
-      <div style="line-height:1.8;color:var(--text-muted)">
-        <p style="margin:0 0 12px">Dans l'application SMS Gate sur ton téléphone :</p>
-        <div style="display:flex;flex-direction:column;gap:10px">
-          <div style="display:flex;gap:12px;align-items:flex-start">
-            <div style="min-width:28px;height:28px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#000;flex-shrink:0">1</div>
-            <div>Ouvre l'app → appuie sur <strong style="color:var(--text)">« Se connecter »</strong> ou <strong style="color:var(--text)">« Créer un compte »</strong></div>
-          </div>
-          <div style="display:flex;gap:12px;align-items:flex-start">
-            <div style="min-width:28px;height:28px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#000;flex-shrink:0">2</div>
-            <div>Crée un compte avec un email et un mot de passe — <strong style="color:var(--text)">note bien ces identifiants</strong>, tu en auras besoin dans le panel</div>
-          </div>
-          <div style="display:flex;gap:12px;align-items:flex-start">
-            <div style="min-width:28px;height:28px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#000;flex-shrink:0">3</div>
-            <div>Une fois connecté, l'app affiche un <strong style="color:var(--text)">Device ID</strong> (ex: <code style="background:rgba(255,255,255,0.08);padding:2px 6px;border-radius:4px">android-xxxx-xxxx</code>) — note-le</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="panel">
-      <div class="panel-title">📡 Étape 3 — Connecter le téléphone au panel</div>
-      <div style="line-height:1.8;color:var(--text-muted)">
-        <p style="margin:0 0 12px">Va dans l'onglet <strong style="color:var(--text)">Devices</strong> et clique <strong style="color:var(--text)">« + Ajouter »</strong>. Remplis :</p>
-        <div style="display:grid;gap:10px">
-          <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:12px;border:1px solid var(--border)">
-            <div style="font-size:11px;font-weight:700;color:var(--accent);margin-bottom:4px">Nom du device</div>
-            <div style="font-size:13px">Un nom pour identifier ton téléphone, ex: <code style="background:rgba(255,255,255,0.08);padding:2px 6px;border-radius:4px">Samsung-S22</code></div>
-          </div>
-          <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:12px;border:1px solid var(--border)">
-            <div style="font-size:11px;font-weight:700;color:var(--accent);margin-bottom:4px">Device ID</div>
-            <div style="font-size:13px">Le code affiché dans l'app SMS Gate, ex: <code style="background:rgba(255,255,255,0.08);padding:2px 6px;border-radius:4px">android-xxxx-xxxx</code></div>
-          </div>
-          <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:12px;border:1px solid var(--border)">
-            <div style="font-size:11px;font-weight:700;color:var(--accent);margin-bottom:4px">Username / Password</div>
-            <div style="font-size:13px">Les identifiants de ton compte SMS Gate (email + mot de passe créé dans l'app)</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="panel">
-      <div class="panel-title">📋 Étape 4 — Préparer les contacts</div>
-      <div style="line-height:1.8;color:var(--text-muted)">
-        <p style="margin:0 0 12px">Va dans <strong style="color:var(--text)">Contacts</strong> et uploade un fichier CSV.</p>
-        <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:14px;border:1px solid var(--border);margin-bottom:12px">
-          <div style="font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:1px;margin-bottom:8px">FORMAT DU FICHIER CSV</div>
-          <code style="font-size:13px;color:var(--accent)">phone<br>+15141234567<br>+15139876543<br>+14381234567</code>
-        </div>
-        <ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px">
-          <li>La première ligne doit être exactement <code style="background:rgba(255,255,255,0.08);padding:2px 6px;border-radius:4px">phone</code></li>
-          <li>Un numéro par ligne, avec indicatif pays</li>
-          <li>Format recommandé : <code style="background:rgba(255,255,255,0.08);padding:2px 6px;border-radius:4px">+1XXXXXXXXXX</code></li>
-          <li>Chaque numéro est supprimé du CSV après envoi réussi (anti-doublon automatique)</li>
-        </ul>
-      </div>
-    </div>
-
-    <div class="panel">
-      <div class="panel-title">✍️ Étape 5 — Rédiger le message</div>
-      <div style="line-height:1.8;color:var(--text-muted)">
-        <p style="margin:0 0 12px">Tu as deux options :</p>
-        <div style="display:grid;gap:10px">
-          <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:12px;border:1px solid var(--border)">
-            <div style="font-size:11px;font-weight:700;color:var(--accent);margin-bottom:4px">Message unique (onglet Message)</div>
-            <div>Un seul texte envoyé à tous les contacts. Simple et rapide.</div>
-          </div>
-          <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:12px;border:1px solid var(--border)">
-            <div style="font-size:11px;font-weight:700;color:var(--accent);margin-bottom:4px">Templates (recommandé — onglet Templates)</div>
-            <div>Ajoute plusieurs variantes. Le bot en choisit une aléatoirement à chaque envoi — réduit drastiquement les blocages opérateurs.</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="panel">
-      <div class="panel-title">🚀 Étape 6 — Lancer le bot</div>
-      <div style="line-height:1.8;color:var(--text-muted)">
-        <p style="margin:0 0 12px">Une fois devices + contacts + message prêts :</p>
-        <div style="display:flex;flex-direction:column;gap:12px">
-          <div style="display:flex;gap:12px;align-items:center">
-            <button class="btn btn-success" style="pointer-events:none;opacity:0.8;flex-shrink:0">▶ Start</button>
-            <div>Lance la campagne — le bot commence à envoyer les SMS</div>
-          </div>
-          <div style="display:flex;gap:12px;align-items:center">
-            <button class="btn btn-warn" style="pointer-events:none;opacity:0.8;flex-shrink:0">⏸ Pause</button>
-            <div>Met le bot en pause — les envois en cours se terminent</div>
-          </div>
-          <div style="display:flex;gap:12px;align-items:center">
-            <button class="btn btn-ghost" style="pointer-events:none;opacity:0.8;flex-shrink:0">↺ Resume</button>
-            <div>Reprend après une pause</div>
-          </div>
-          <div style="display:flex;gap:12px;align-items:center">
-            <button class="btn btn-danger" style="pointer-events:none;opacity:0.8;flex-shrink:0">⏹ Stop</button>
-            <div>Arrête complètement la campagne</div>
-          </div>
-        </div>
-        <p style="margin:14px 0 0">Surveille les stats en temps réel sur le <strong style="color:var(--text)">Dashboard</strong> et l'historique détaillé dans <strong style="color:var(--text)">Historique</strong>.</p>
-      </div>
-    </div>
-
-    <!-- FAQ -->
-    <div class="panel">
-      <div class="panel-title">❓ Problèmes fréquents</div>
-      <div style="display:flex;flex-direction:column;gap:4px" id="faq-container">
-
-        <div class="faq-item">
-          <div class="faq-q" onclick="toggleFaq(this.parentElement)">📵 Le device apparaît inactif / déconnecté <span class="faq-arr">▾</span></div>
-          <div class="faq-a">Vérifie que l'app SMS Gate est ouverte sur le téléphone. Va dans paramètres Android → Apps → SMS Gate → Batterie → désactive l'optimisation. Ferme et relance l'app si le problème persiste.</div>
-        </div>
-
-        <div class="faq-item">
-          <div class="faq-q" onclick="toggleFaq(this.parentElement)">❌ Les SMS échouent tous (statut FAIL) <span class="faq-arr">▾</span></div>
-          <div class="faq-a">Vérifie que le Device ID, l'username et le password correspondent exactement à ceux de l'app SMS Gate. Teste en envoyant un SMS manuellement depuis l'app. Certains opérateurs bloquent les SMS en masse — augmente les pauses dans Réglages.</div>
-        </div>
-
-        <div class="faq-item">
-          <div class="faq-q" onclick="toggleFaq(this.parentElement)">📵 Les destinataires ne reçoivent pas les SMS <span class="faq-arr">▾</span></div>
-          <div class="faq-a">Si le statut dit "Sent" mais les gens ne reçoivent rien, l'opérateur filtre les SMS. Solutions : utilise les Templates pour varier le texte, augmente le délai (15s+ recommandé), évite d'envoyer des centaines de SMS par heure depuis le même numéro.</div>
-        </div>
-
-        <div class="faq-item">
-          <div class="faq-q" onclick="toggleFaq(this.parentElement)">📂 Mon CSV ne s'uploade pas <span class="faq-arr">▾</span></div>
-          <div class="faq-a">Vérifie que le fichier est au format .csv et que la première ligne est exactement <code style="background:rgba(255,255,255,0.08);padding:2px 6px;border-radius:4px">phone</code>. Pas d'espaces, pas d'autres colonnes. Si tu utilises Excel, enregistre en « CSV UTF-8 ».</div>
-        </div>
-
-        <div class="faq-item">
-          <div class="faq-q" onclick="toggleFaq(this.parentElement)">🔄 Le bot s'arrête tout seul <span class="faq-arr">▾</span></div>
-          <div class="faq-a">Le bot s'arrête quand il n'y a plus de contacts dans le CSV ou quand aucun device actif n'est disponible. Vérifie dans Contacts combien de numéros restent, et dans Devices que tes appareils sont activés (bouton ON).</div>
-        </div>
-
-        <div class="faq-item">
-          <div class="faq-q" onclick="toggleFaq(this.parentElement)">🔐 J'ai oublié mon mot de passe <span class="faq-arr">▾</span></div>
-          <div class="faq-a">Contacte l'administrateur du panel via l'onglet Support — il peut réinitialiser ton mot de passe depuis le panneau Utilisateurs.</div>
-        </div>
-
-      </div>
-    </div>
-
+    <div class="sec-header"><div><div class="sec-title">Guide d'utilisation</div></div></div>
+    <div class="panel"><div class="panel-title">📱 Étape 1 — Installer SMS Gate</div><div style="line-height:1.8;color:var(--text-muted)"><p style="margin:0 0 12px">Installe <strong style="color:var(--text)">SMS Gate</strong> sur ton téléphone Android.</p><div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px"><a href="https://play.google.com/store/apps/details?id=me.capcom.smsgateway" target="_blank" class="btn btn-primary" style="text-decoration:none">▶ Google Play</a></div></div></div>
+    <div class="panel"><div class="panel-title">🔑 Étape 2 — Créer un compte SMS Gate</div><div style="line-height:1.8;color:var(--text-muted)">Ouvre l'app → crée un compte → note le <strong style="color:var(--text)">Device ID</strong> affiché (ex: <code style="background:rgba(255,255,255,0.08);padding:2px 6px;border-radius:4px">android-xxxx</code>)</div></div>
+    <div class="panel"><div class="panel-title">📡 Étape 3 — Ajouter le device</div><div style="line-height:1.8;color:var(--text-muted)">Va dans <strong style="color:var(--text)">Devices</strong> → <strong style="color:var(--text)">+ Ajouter</strong> → choisis <strong style="color:var(--text)">📱 SMS Gate</strong> → remplis Nom, Device ID, Username, Password.</div></div>
+    <div class="panel"><div class="panel-title">💬 Option TextNow (sans téléphone)</div><div style="line-height:1.8;color:var(--text-muted)"><p style="margin:0 0 12px">Crée un compte sur <a href="https://www.textnow.com" target="_blank" style="color:var(--accent)">textnow.com</a>. Récupère ton cookie SID (F12 → Application → Cookies → SID). Dans Devices → + Ajouter → choisis <strong style="color:var(--text)">💬 TextNow</strong>.</p><div style="background:rgba(255,170,0,0.08);border:1px solid rgba(255,170,0,0.2);border-radius:8px;padding:12px;font-size:12px;color:var(--warn)">⚠️ Les numéros TextNow sont VoIP — moins fiables que SMS Gate pour certains opérateurs.</div></div></div>
+    <div class="panel"><div class="panel-title">📋 Étape 4 — Contacts CSV</div><div style="line-height:1.8;color:var(--text-muted)">Format requis :<br><code style="color:var(--accent)">phone<br>+15141234567<br>+15139876543</code></div></div>
+    <div class="panel"><div class="panel-title">❓ Problèmes fréquents</div><div id="faq-container">
+      <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this.parentElement)">📵 Device inactif / déconnecté <span class="faq-arr">▾</span></div><div class="faq-a">Vérifie que SMS Gate est ouverte. Désactive l'optimisation batterie pour l'app.</div></div>
+      <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this.parentElement)">❌ Tous les SMS échouent <span class="faq-arr">▾</span></div><div class="faq-a">Vérifie Device ID, username et password. Augmente les pauses dans Réglages.</div></div>
+      <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this.parentElement)">📂 CSV ne s'uploade pas <span class="faq-arr">▾</span></div><div class="faq-a">Première ligne doit être exactement <code>phone</code>. Enregistre en "CSV UTF-8" depuis Excel.</div></div>
+      <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this.parentElement)">🔄 Bot s'arrête tout seul <span class="faq-arr">▾</span></div><div class="faq-a">Plus de contacts dans le CSV ou aucun device actif. Vérifie les deux.</div></div>
+    </div></div>
   </div>
 
-  <!-- ════════════════════════════════
-       SUPPORT — SYSTÈME DE TICKETS
-  ════════════════════════════════ -->
+  <!-- SUPPORT -->
   <div class="tab-section" id="tab-support">
-
-    <!-- LISTE DES TICKETS -->
     <div id="ticket-list-wrap">
       <div class="sec-header">
         <div><div class="sec-title">Support</div><div class="sec-sub">Vos tickets d'assistance</div></div>
         <button class="btn btn-primary" onclick="showNewTicketForm()">+ Nouveau ticket</button>
       </div>
-
-      <!-- Formulaire nouveau ticket -->
       <div class="panel" id="new-ticket-form" style="display:none">
         <div class="panel-title">Nouveau ticket</div>
         <div class="field"><label class="field-label">Sujet</label><input class="input" id="tk-subject" placeholder="Décris brièvement ton problème..."></div>
-        <div class="field"><label class="field-label">Message</label><textarea class="input" id="tk-msg" rows="5" placeholder="Explique en détail : ce que tu fais, ce qui se passe, les erreurs que tu vois..."></textarea></div>
+        <div class="field"><label class="field-label">Message</label><textarea class="input" id="tk-msg" rows="5" placeholder="Explique en détail..."></textarea></div>
         <div style="display:flex;gap:8px">
           <button class="btn btn-primary" onclick="createTicket()">📨 Envoyer</button>
           <button class="btn btn-ghost" onclick="hideNewTicketForm()">Annuler</button>
         </div>
       </div>
-
-      <!-- Filtres -->
       <div class="filter-tabs" id="ticket-filters">
         <button class="filter-tab active" onclick="loadTickets('all',this)">Tous</button>
         <button class="filter-tab" onclick="loadTickets('open',this)">🔓 Ouverts</button>
         <button class="filter-tab" onclick="loadTickets('answered',this)">💬 Répondus</button>
         <button class="filter-tab" onclick="loadTickets('closed',this)">✓ Fermés</button>
       </div>
-
-      <div id="ticket-list" class="ticket-list">
-        <div class="empty"><div class="empty-icon">💬</div><div class="empty-text">Aucun ticket pour l'instant.</div></div>
-      </div>
+      <div id="ticket-list" class="ticket-list"><div class="empty"><div class="empty-icon">💬</div><div class="empty-text">Aucun ticket.</div></div></div>
     </div>
-
-    <!-- VUE CONVERSATION D'UN TICKET -->
     <div id="ticket-conv" style="display:none">
       <div class="ticket-header">
         <div class="back-btn" onclick="backToTickets()">← Retour</div>
         <div class="ticket-view-title" id="conv-title">—</div>
         <div id="conv-actions" style="display:flex;gap:8px"></div>
       </div>
-
-      <!-- Message original -->
       <div class="panel">
         <div class="original-msg-label">Message original</div>
         <div class="original-msg" id="conv-original"></div>
@@ -645,38 +433,27 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
           <span id="conv-status-badge"></span>
         </div>
       </div>
-
-      <!-- Réponses -->
       <div class="panel">
         <div class="panel-title">Conversation</div>
-        <div class="messages-wrap" id="conv-messages">
-          <div class="empty"><div class="empty-text">Aucune réponse encore.</div></div>
-        </div>
-
-        <!-- Zone de réponse -->
+        <div class="messages-wrap" id="conv-messages"></div>
         <div class="reply-box" id="reply-box">
           <div class="reply-box-title">Votre réponse</div>
           <textarea class="input" id="reply-txt" rows="3" placeholder="Écrivez votre réponse..." style="margin-bottom:10px"></textarea>
-          <button class="btn btn-primary" onclick="sendReply()">Envoyer la réponse</button>
+          <button class="btn btn-primary" onclick="sendReply()">Envoyer</button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- FAQ dans support - accessible via scroll dans la conv view ou section séparée -->
-
-  <!-- ADMIN — UTILISATEURS -->
+  <!-- ADMIN -->
   <div class="tab-section" id="tab-admin">
-    <div class="sec-header"><div><div class="sec-title">Utilisateurs</div><div class="sec-sub">Gestion des comptes (Admin uniquement)</div></div></div>
+    <div class="sec-header"><div><div class="sec-title">Utilisateurs</div><div class="sec-sub">Admin uniquement</div></div></div>
     <div class="panel">
       <div class="panel-title">Créer un compte</div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
         <div class="field" style="flex:1;min-width:120px;margin:0"><input class="input" id="new-uname" placeholder="Nom d'utilisateur"></div>
         <div class="field" style="flex:1;min-width:120px;margin:0"><input class="input" id="new-upass" placeholder="Mot de passe" type="password"></div>
-        <select id="new-urole" class="input" style="width:120px">
-          <option value="user">user</option>
-          <option value="admin">admin</option>
-        </select>
+        <select id="new-urole" class="input" style="width:120px"><option value="user">user</option><option value="admin">admin</option></select>
         <button class="btn btn-primary" onclick="createUser()">➕ Créer</button>
       </div>
     </div>
@@ -692,34 +469,21 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
 </div>
 
 <script>
-// ══════════════════════════════════════════════════
-// GLOBALS
-// ══════════════════════════════════════════════════
 let currentUser = null
 let currentTicketId = null
 let currentTicketFilter = 'all'
+let currentDeviceType = 'smsgate'
 
-// ══════════════════════════════════════════════════
-// INIT
-// ══════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
   fetch('/me').then(r=>r.json()).then(u=>{
     currentUser = u
     document.getElementById('sidebar-username').textContent = u.username
-    if (u.role === 'admin') {
-      document.getElementById('admin-nav-wrap').style.display = 'block'
-    }
+    if (u.role === 'admin') document.getElementById('admin-nav-wrap').style.display = 'block'
   })
-  loadDevices()
-  loadCsvStatus()
-  loadTemplates()
-  pollUnreadBadge()
+  loadDevices(); loadCsvStatus(); loadTemplates(); pollUnreadBadge()
   setInterval(pollUnreadBadge, 15000)
 })
 
-// ══════════════════════════════════════════════════
-// TABS
-// ══════════════════════════════════════════════════
 function go(name, el) {
   document.querySelectorAll('.tab-section').forEach(s=>s.classList.remove('active'))
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'))
@@ -732,12 +496,8 @@ function go(name, el) {
   if (name==='templates') loadTemplates()
   if (name==='admin') loadUsers()
   if (name==='support') { loadTickets('all'); backToTickets() }
-  // guide: no data to load
 }
 
-// ══════════════════════════════════════════════════
-// TOAST
-// ══════════════════════════════════════════════════
 function toast(msg, type='i') {
   const t = document.createElement('div')
   t.className = 'toast t-'+type
@@ -746,22 +506,16 @@ function toast(msg, type='i') {
   setTimeout(()=>t.remove(), 3500)
 }
 
-// ══════════════════════════════════════════════════
-// MODAL CSV
-// ══════════════════════════════════════════════════
 function openModal()  { document.getElementById('modal').classList.add('open') }
 function closeModal() { document.getElementById('modal').classList.remove('open') }
 function confirmDeleteCSV() {
   closeModal()
   fetch('/delete_csv',{method:'POST'}).then(r=>r.json()).then(d=>{
-    if (d.status==='ok') { toast('🗑 CSV supprimé','i'); loadCsvStatus(); loadContacts() }
+    if(d.status==='ok'){toast('🗑 CSV supprimé','i');loadCsvStatus();loadContacts()}
     else toast('❌ '+d.message,'e')
   })
 }
 
-// ══════════════════════════════════════════════════
-// CHART
-// ══════════════════════════════════════════════════
 const chart = new Chart(document.getElementById('chart').getContext('2d'),{
   type:'line',
   data:{labels:[],datasets:[
@@ -795,9 +549,6 @@ setInterval(()=>{
   }).catch(()=>{})
 },3000)
 
-// ══════════════════════════════════════════════════
-// BOT
-// ══════════════════════════════════════════════════
 function setBotState(s){
   const dot=document.getElementById('bot-dot'),txt=document.getElementById('bot-txt')
   dot.className='bot-dot'
@@ -810,9 +561,14 @@ function botPause()  { fetch('/pause', {method:'POST'}).then(()=>{setBotState('p
 function botResume() { fetch('/resume',{method:'POST'}).then(()=>{setBotState('running');toast('▶ Repris','s')}) }
 function botStop()   { fetch('/stop',  {method:'POST'}).then(()=>{setBotState('stopped');toast('⏹ Bot arrêté','i')}) }
 
-// ══════════════════════════════════════════════════
 // DEVICES
-// ══════════════════════════════════════════════════
+function switchDeviceType(type) {
+  currentDeviceType = type
+  document.getElementById('form-smsgate').style.display = type==='smsgate' ? 'block' : 'none'
+  document.getElementById('form-textnow').style.display = type==='textnow' ? 'block' : 'none'
+  document.getElementById('tab-smsgate').classList.toggle('active', type==='smsgate')
+  document.getElementById('tab-textnow').classList.toggle('active', type==='textnow')
+}
 function toggleForm(){const f=document.getElementById('add-form');f.style.display=f.style.display==='none'?'block':'none'}
 function loadDevices(){
   fetch('/devices').then(r=>r.json()).then(d=>{
@@ -822,7 +578,7 @@ function loadDevices(){
     if(!d.devices.length){document.getElementById('dev-list').innerHTML='<div class="empty"><div class="empty-icon">◈</div><div class="empty-text">Aucun device.</div></div>';return}
     document.getElementById('dev-list').innerHTML=d.devices.map(x=>`
       <div class="device-card ${x.active?'dev-on':''}">
-        <div><div class="device-name"><div class="status-dot ${x.active?'on':'off'}"></div>${x.name}</div>
+        <div><div class="device-name"><div class="status-dot ${x.active?'on':'off'}"></div>${x.name} <span style="font-size:10px;padding:2px 7px;border-radius:4px;background:${x.type==='textnow'?'rgba(0,212,255,0.15)':'rgba(0,232,122,0.15)'};color:${x.type==='textnow'?'var(--accent)':'var(--success)'}">${x.type==='textnow'?'TextNow':'SMS Gate'}</span></div>
         <div class="device-stats"><span>Envoyés: <span class="v-a">${x.sent||0}</span></span><span>✅ <span class="v-s">${x.success||0}</span></span><span>❌ <span class="v-f">${x.fail||0}</span></span></div></div>
         <div class="device-actions">
           <button class="btn ${x.active?'btn-warn':'btn-success'}" onclick="toggleDev('${x.name}')">${x.active?'⏸ Désactiver':'▶ Activer'}</button>
@@ -832,11 +588,24 @@ function loadDevices(){
   })
 }
 function addDevice(){
-  const n=document.getElementById('d-name').value.trim(),d=document.getElementById('d-did').value.trim(),u=document.getElementById('d-user').value.trim(),p=document.getElementById('d-pass').value.trim()
-  if(!n||!d){toast('Nom et Device ID requis','e');return}
-  fetch('/add_device',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,device_id:d,username:u,password:p})})
+  let payload = {}
+  if (currentDeviceType === 'textnow') {
+    const n=document.getElementById('tn-name').value.trim()
+    const u=document.getElementById('tn-user').value.trim()
+    const s=document.getElementById('tn-sid').value.trim()
+    if(!n||!u||!s){toast('Nom, username et cookie SID requis','e');return}
+    payload={name:n,type:'textnow',username:u,sid_cookie:s}
+  } else {
+    const n=document.getElementById('d-name').value.trim()
+    const d=document.getElementById('d-did').value.trim()
+    const u=document.getElementById('d-user').value.trim()
+    const p=document.getElementById('d-pass').value.trim()
+    if(!n||!d){toast('Nom et Device ID requis','e');return}
+    payload={name:n,type:'smsgate',device_id:d,username:u,password:p}
+  }
+  fetch('/add_device',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
   .then(r=>r.json()).then(res=>{
-    if(res.status==='ok'){toast('✓ Device ajouté','s');loadDevices();toggleForm();['d-name','d-did','d-user','d-pass'].forEach(id=>document.getElementById(id).value='')}
+    if(res.status==='ok'){toast('✓ Device ajouté','s');loadDevices();toggleForm()}
     else toast('❌ '+res.message,'e')
   })
 }
@@ -844,9 +613,7 @@ function toggleDev(name){fetch('/toggle_device',{method:'POST',headers:{'Content
 function delDev(name){if(!confirm('Supprimer "'+name+'" ?'))return;fetch('/delete_device',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name})}).then(()=>{toast('Device supprimé','i');loadDevices()})}
 setInterval(loadDevices,4000)
 
-// ══════════════════════════════════════════════════
 // CSV
-// ══════════════════════════════════════════════════
 function loadCsvStatus(){
   fetch('/csv_status').then(r=>r.json()).then(d=>{
     const card=document.getElementById('csv-card'),dot=document.getElementById('csv-dot')
@@ -872,7 +639,7 @@ function doUpload(file){
   document.getElementById('upzone-text').textContent='Upload en cours...'
   const fd=new FormData();fd.append('file',file)
   fetch('/upload',{method:'POST',body:fd}).then(r=>r.json()).then(d=>{
-    if(d.status==='ok'){toast(`✓ CSV uploadé — ${d.count} contacts`,'s');loadContacts();loadCsvStatus()}
+    if(d.status==='ok'){toast('✓ CSV uploadé — '+d.count+' contacts','s');loadContacts();loadCsvStatus()}
     else toast('❌ '+d.message,'e')
     document.getElementById('upzone-text').textContent='Glisser-déposer ou cliquer'
   })
@@ -884,12 +651,10 @@ function loadContacts(){
     document.getElementById('ct-list').innerHTML=d.data.map(x=>`<tr><td style="font-family:'DM Mono'">${x.phone}</td><td style="text-align:right"><button class="btn btn-warn" style="padding:4px 10px;font-size:11px" onclick="blContact('${x.phone}')">⊗ Blacklist</button><button class="btn btn-danger" style="padding:4px 10px;font-size:11px" onclick="delContact('${x.phone}')">✕</button></td></tr>`).join('')
   })
 }
-function delContact(phone){fetch('/delete_contact',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone})}).then(()=>{toast('Contact supprimé','i');loadContacts();loadCsvStatus()})}
+function delContact(phone){fetch('/delete_contact',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone})}).then(()=>{toast('Supprimé','i');loadContacts();loadCsvStatus()})}
 function blContact(phone){fetch('/add_blacklist',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone})}).then(()=>{toast('🚫 Blacklisté','i');loadContacts()})}
 
-// ══════════════════════════════════════════════════
 // BLACKLIST
-// ══════════════════════════════════════════════════
 function loadBL(){
   fetch('/blacklist').then(r=>r.json()).then(d=>{
     if(!d.data.length){document.getElementById('bl-list').innerHTML='<tr><td colspan="2" style="text-align:center;padding:32px;color:var(--text-muted)">Blacklist vide.</td></tr>';return}
@@ -899,9 +664,7 @@ function loadBL(){
 function addBL(){const phone=document.getElementById('bl-num').value.trim();if(!phone){toast('Entre un numéro','e');return}fetch('/add_blacklist',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone})}).then(()=>{document.getElementById('bl-num').value='';toast('🚫 Bloqué','i');loadBL()})}
 function removeBL(phone){fetch('/remove_blacklist',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone})}).then(()=>{toast('Retiré','s');loadBL()})}
 
-// ══════════════════════════════════════════════════
 // HISTORIQUE
-// ══════════════════════════════════════════════════
 function loadHist(filter,el){
   if(el){document.querySelectorAll('.filter-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active')}
   fetch('/history'+(filter?'?filter='+filter:'')).then(r=>r.json()).then(d=>{
@@ -910,9 +673,7 @@ function loadHist(filter,el){
   })
 }
 
-// ══════════════════════════════════════════════════
 // TEMPLATES
-// ══════════════════════════════════════════════════
 document.getElementById('tpl-txt').addEventListener('input',function(){
   const len=this.value.length,pct=Math.min(len/160*100,100)
   document.getElementById('tpl-count').textContent=len
@@ -922,11 +683,7 @@ function loadTemplates(){
   fetch('/templates').then(r=>r.json()).then(d=>{
     document.getElementById('tpl-count-badge').textContent='('+d.data.length+')'
     if(!d.data.length){document.getElementById('tpl-list').innerHTML='<div class="empty"><div class="empty-icon">⊞</div><div class="empty-text">Aucun template.</div></div>';return}
-    document.getElementById('tpl-list').innerHTML=d.data.map(t=>`
-      <div style="background:var(--surface-2);border:1px solid var(--border-b);border-radius:8px;padding:12px 16px;margin-bottom:8px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
-        <div style="flex:1"><div style="font-size:12px;color:var(--text);line-height:1.6">${t.content}</div><div style="font-size:10px;color:var(--text-muted);margin-top:4px">${t.content.length} car.</div></div>
-        <button class="btn btn-danger" style="padding:4px 10px;font-size:11px;flex-shrink:0" onclick="delTemplate(${t.id})">✕</button>
-      </div>`).join('')
+    document.getElementById('tpl-list').innerHTML=d.data.map(t=>`<div style="background:var(--surface-2);border:1px solid var(--border-b);border-radius:8px;padding:12px 16px;margin-bottom:8px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px"><div style="flex:1"><div style="font-size:12px;color:var(--text);line-height:1.6">${t.content}</div><div style="font-size:10px;color:var(--text-muted);margin-top:4px">${t.content.length} car.</div></div><button class="btn btn-danger" style="padding:4px 10px;font-size:11px;flex-shrink:0" onclick="delTemplate(${t.id})">✕</button></div>`).join('')
   })
 }
 function addTemplate(){
@@ -938,11 +695,9 @@ function addTemplate(){
     else toast('❌ '+res.message,'e')
   })
 }
-function delTemplate(id){fetch('/delete_template',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})}).then(()=>{toast('Template supprimé','i');loadTemplates()})}
+function delTemplate(id){fetch('/delete_template',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})}).then(()=>{toast('Supprimé','i');loadTemplates()})}
 
-// ══════════════════════════════════════════════════
 // MESSAGE & SETTINGS
-// ══════════════════════════════════════════════════
 document.getElementById('msg-txt').addEventListener('input',function(){
   const len=this.value.length,pct=Math.min(len/160*100,100)
   document.getElementById('ch-count').textContent=len
@@ -952,27 +707,13 @@ document.getElementById('msg-txt').addEventListener('input',function(){
 })
 function saveMsg(){fetch('/set_message',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:document.getElementById('msg-txt').value})}).then(()=>toast('✓ Message sauvegardé','s'))}
 function saveSettings(){fetch('/set_settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({delay:document.getElementById('r-delay').value,pause_every:document.getElementById('r-every').value,pause_time:document.getElementById('r-ptime').value})}).then(()=>toast('✓ Réglages sauvegardés','s'))}
-function changeMyPwd(){const p=document.getElementById('my-pwd').value.trim();if(!p){toast('Mot de passe vide','e');return}fetch('/change_password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:p})}).then(r=>r.json()).then(d=>{if(d.status==='ok'){toast('✓ Mot de passe changé','s');document.getElementById('my-pwd').value=''}else toast('❌ Erreur','e')})}
-
-// ── FAQ ──
+function changeMyPwd(){const p=document.getElementById('my-pwd').value.trim();if(!p){toast('Vide','e');return}fetch('/change_password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:p})}).then(r=>r.json()).then(d=>{if(d.status==='ok'){toast('✓ Mot de passe changé','s');document.getElementById('my-pwd').value=''}else toast('❌ Erreur','e')})}
 function toggleFaq(el){ el.classList.toggle('open') }
 
-// ══════════════════════════════════════════════════
 // ADMIN USERS
-// ══════════════════════════════════════════════════
 function loadUsers(){
   fetch('/admin/users').then(r=>r.json()).then(data=>{
-    document.getElementById('user-table').innerHTML=data.users.map(u=>`
-      <tr>
-        <td>${u.id}</td>
-        <td style="font-weight:600">${u.username}</td>
-        <td><span style="padding:2px 8px;border-radius:4px;background:${u.role==='admin'?'rgba(255,160,0,0.15)':'rgba(0,212,255,0.1)'};color:${u.role==='admin'?'var(--warn)':'var(--accent)'};font-size:11px">${u.role}</span></td>
-        <td style="color:var(--text-muted);font-size:11px">${(u.created_at||'').slice(0,10)}</td>
-        <td>
-          <button class="btn btn-warn" style="padding:4px 10px;font-size:11px" onclick="resetPwd(${u.id},'${u.username}')">🔑 MDP</button>
-          <button class="btn btn-danger" style="padding:4px 10px;font-size:11px" onclick="deleteUser(${u.id},'${u.username}')">✕</button>
-        </td>
-      </tr>`).join('')||'<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-muted)">Aucun utilisateur</td></tr>'
+    document.getElementById('user-table').innerHTML=data.users.map(u=>`<tr><td>${u.id}</td><td style="font-weight:600">${u.username}</td><td><span style="padding:2px 8px;border-radius:4px;background:${u.role==='admin'?'rgba(255,160,0,0.15)':'rgba(0,212,255,0.1)'};color:${u.role==='admin'?'var(--warn)':'var(--accent)'};font-size:11px">${u.role}</span></td><td style="color:var(--text-muted);font-size:11px">${(u.created_at||'').slice(0,10)}</td><td><button class="btn btn-warn" style="padding:4px 10px;font-size:11px" onclick="resetPwd(${u.id},'${u.username}')">🔑 MDP</button> <button class="btn btn-danger" style="padding:4px 10px;font-size:11px" onclick="deleteUser(${u.id},'${u.username}')">✕</button></td></tr>`).join('')||'<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-muted)">Aucun</td></tr>'
   }).catch(()=>{})
 }
 function createUser(){
@@ -984,197 +725,83 @@ function createUser(){
 function deleteUser(id,name){if(!confirm('Supprimer '+name+' ?'))return;fetch('/admin/delete_user',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})}).then(r=>r.json()).then(d=>{if(d.status==='ok'){toast('✓ Supprimé','s');loadUsers()}else toast('❌ '+d.message,'e')})}
 function resetPwd(id,name){const p=prompt('Nouveau MDP pour '+name+' :');if(!p)return;fetch('/admin/reset_password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,password:p})}).then(r=>r.json()).then(d=>{if(d.status==='ok')toast('✓ MDP mis à jour','s');else toast('❌ Erreur','e')})}
 
-// ══════════════════════════════════════════════════
-// ████  SYSTÈME DE TICKETS  ████
-// ══════════════════════════════════════════════════
-
-// Badge unread polling
+// TICKETS
 function pollUnreadBadge() {
   fetch('/tickets/unread_count').then(r=>r.json()).then(d=>{
     const badge = document.getElementById('support-badge')
-    if (d.count > 0) {
-      badge.textContent = d.count
-      badge.classList.add('show')
-    } else {
-      badge.classList.remove('show')
-    }
+    if (d.count > 0) { badge.textContent=d.count; badge.classList.add('show') }
+    else badge.classList.remove('show')
   }).catch(()=>{})
 }
-
-// Status badge HTML
 function statusBadge(status) {
-  const map = {
-    open:     '<span class="badge badge-i">🔓 Ouvert</span>',
-    answered: '<span class="badge badge-s">💬 Répondu</span>',
-    closed:   '<span class="badge badge-w">✓ Fermé</span>'
-  }
+  const map = { open:'<span class="badge badge-i">🔓 Ouvert</span>', answered:'<span class="badge badge-s">💬 Répondu</span>', closed:'<span class="badge badge-w">✓ Fermé</span>' }
   return map[status] || status
 }
-
-// LISTE TICKETS
 function loadTickets(filter, el) {
   currentTicketFilter = filter
-  if (el) {
-    document.querySelectorAll('#ticket-filters .filter-tab').forEach(t=>t.classList.remove('active'))
-    el.classList.add('active')
-  }
-
+  if (el) { document.querySelectorAll('#ticket-filters .filter-tab').forEach(t=>t.classList.remove('active')); el.classList.add('active') }
   fetch('/tickets').then(r=>r.json()).then(d=>{
     let tickets = d.tickets
     if (filter !== 'all') tickets = tickets.filter(t=>t.status===filter)
-
     const container = document.getElementById('ticket-list')
-
-    if (!tickets.length) {
-      container.innerHTML = '<div class="empty"><div class="empty-icon">💬</div><div class="empty-text">Aucun ticket.</div></div>'
-      return
-    }
-
-    container.innerHTML = tickets.map(t => `
-      <div class="ticket-row ${t.unread>0?'has-unread':''}" onclick="openTicket(${t.id})">
-        <div class="ticket-left">
-          <div class="ticket-subject">
-            ${t.unread>0?'<div class="unread-dot"></div>':''}
-            ${t.subject}
-          </div>
-          <div class="ticket-meta">
-            De : <strong>${t.username}</strong> · ${(t.created_at||'').slice(0,16)}
-          </div>
-        </div>
-        <div class="ticket-right">
-          ${statusBadge(t.status)}
-          ${t.unread>0?`<span style="font-size:11px;color:var(--accent)">${t.unread} nouvelle${t.unread>1?'s':''}</span>`:''}
-        </div>
-      </div>`).join('')
+    if (!tickets.length) { container.innerHTML='<div class="empty"><div class="empty-icon">💬</div><div class="empty-text">Aucun ticket.</div></div>'; return }
+    container.innerHTML = tickets.map(t=>`<div class="ticket-row ${t.unread>0?'has-unread':''}" onclick="openTicket(${t.id})"><div class="ticket-left"><div class="ticket-subject">${t.unread>0?'<div class="unread-dot"></div>':''}${t.subject}</div><div class="ticket-meta">De : <strong>${t.username}</strong> · ${(t.created_at||'').slice(0,16)}</div></div><div class="ticket-right">${statusBadge(t.status)}</div></div>`).join('')
   })
 }
-
-// NOUVEAU TICKET
-function showNewTicketForm() {
-  document.getElementById('new-ticket-form').style.display = 'block'
-  document.getElementById('tk-subject').focus()
-}
-function hideNewTicketForm() {
-  document.getElementById('new-ticket-form').style.display = 'none'
-}
+function showNewTicketForm() { document.getElementById('new-ticket-form').style.display='block'; document.getElementById('tk-subject').focus() }
+function hideNewTicketForm() { document.getElementById('new-ticket-form').style.display='none' }
 function createTicket() {
-  const subject = document.getElementById('tk-subject').value.trim()
-  const message = document.getElementById('tk-msg').value.trim()
-  if (!subject || !message) { toast('Sujet et message requis','e'); return }
-  fetch('/tickets/create', {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({subject, message})
-  }).then(r=>r.json()).then(d=>{
-    if (d.status==='ok') {
-      toast('✓ Ticket envoyé','s')
-      document.getElementById('tk-subject').value=''
-      document.getElementById('tk-msg').value=''
-      hideNewTicketForm()
-      loadTickets(currentTicketFilter)
-    } else toast('❌ '+d.message,'e')
+  const subject=document.getElementById('tk-subject').value.trim(), message=document.getElementById('tk-msg').value.trim()
+  if(!subject||!message){toast('Sujet et message requis','e');return}
+  fetch('/tickets/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({subject,message})})
+  .then(r=>r.json()).then(d=>{
+    if(d.status==='ok'){toast('✓ Ticket envoyé','s');document.getElementById('tk-subject').value='';document.getElementById('tk-msg').value='';hideNewTicketForm();loadTickets(currentTicketFilter)}
+    else toast('❌ '+d.message,'e')
   })
 }
-
-// OUVRIR UN TICKET
 function openTicket(id) {
   currentTicketId = id
-  document.getElementById('ticket-list-wrap').style.display = 'none'
-  document.getElementById('ticket-conv').style.display = 'block'
-
-  fetch(`/tickets/${id}/replies`).then(r=>r.json()).then(d=>{
-    const t = d.ticket
-
-    document.getElementById('conv-title').textContent = t.subject
-    document.getElementById('conv-original').textContent = t.message
-    document.getElementById('conv-from').textContent = t.username
-    document.getElementById('conv-date').textContent = (t.created_at||'').slice(0,16)
-    document.getElementById('conv-status-badge').innerHTML = statusBadge(t.status)
-
-    // Actions admin
-    const actions = document.getElementById('conv-actions')
-    if (currentUser && currentUser.role === 'admin') {
-      actions.innerHTML = `
-        ${t.status !== 'closed' ? `<button class="btn btn-ghost" onclick="closeTicket(${id})">✓ Fermer</button>` : ''}
-        <button class="btn btn-danger" onclick="deleteTicket(${id})">🗑 Supprimer</button>`
-    } else {
-      actions.innerHTML = ''
-    }
-
-    // Cacher reply si fermé
-    document.getElementById('reply-box').style.display = t.status==='closed' ? 'none' : 'block'
-
-    // Afficher les réponses
+  document.getElementById('ticket-list-wrap').style.display='none'
+  document.getElementById('ticket-conv').style.display='block'
+  fetch('/tickets/'+id+'/replies').then(r=>r.json()).then(d=>{
+    const t=d.ticket
+    document.getElementById('conv-title').textContent=t.subject
+    document.getElementById('conv-original').textContent=t.message
+    document.getElementById('conv-from').textContent=t.username
+    document.getElementById('conv-date').textContent=(t.created_at||'').slice(0,16)
+    document.getElementById('conv-status-badge').innerHTML=statusBadge(t.status)
+    const actions=document.getElementById('conv-actions')
+    if(currentUser&&currentUser.role==='admin'){
+      actions.innerHTML=(t.status!=='closed'?`<button class="btn btn-ghost" onclick="closeTicket(${id})">✓ Fermer</button>`:'')+`<button class="btn btn-danger" onclick="deleteTicket(${id})">🗑 Supprimer</button>`
+    } else actions.innerHTML=''
+    document.getElementById('reply-box').style.display=t.status==='closed'?'none':'block'
     renderReplies(d.replies)
-
-    // Clear badge
     pollUnreadBadge()
   })
 }
-
 function renderReplies(replies) {
-  const wrap = document.getElementById('conv-messages')
-  if (!replies.length) {
-    wrap.innerHTML = '<div class="empty" style="padding:24px"><div class="empty-text" style="font-size:12px">Aucune réponse encore.</div></div>'
-    return
-  }
-  wrap.innerHTML = replies.map(r => `
-    <div class="msg-bubble ${r.role==='admin'?'from-admin':'from-user'}">
-      <div>${r.message}</div>
-      <div class="msg-meta">
-        <span class="msg-author">${r.author}</span>
-        ${r.role==='admin'?'<span class="msg-admin-tag">ADMIN</span>':''}
-        <span>${(r.created_at||'').slice(11,16)}</span>
-      </div>
-    </div>`).join('')
-  // Scroll to bottom
-  wrap.scrollTop = wrap.scrollHeight
+  const wrap=document.getElementById('conv-messages')
+  if(!replies.length){wrap.innerHTML='<div class="empty" style="padding:24px"><div class="empty-text">Aucune réponse encore.</div></div>';return}
+  wrap.innerHTML=replies.map(r=>`<div class="msg-bubble ${r.role==='admin'?'from-admin':'from-user'}"><div>${r.message}</div><div class="msg-meta"><span class="msg-author">${r.author}</span>${r.role==='admin'?'<span class="msg-admin-tag">ADMIN</span>':''}<span>${(r.created_at||'').slice(11,16)}</span></div></div>`).join('')
+  wrap.scrollTop=wrap.scrollHeight
 }
-
-// RETOUR LISTE
 function backToTickets() {
-  currentTicketId = null
-  document.getElementById('ticket-list-wrap').style.display = 'block'
-  document.getElementById('ticket-conv').style.display = 'none'
+  currentTicketId=null
+  document.getElementById('ticket-list-wrap').style.display='block'
+  document.getElementById('ticket-conv').style.display='none'
   loadTickets(currentTicketFilter)
 }
-
-// RÉPONDRE
 function sendReply() {
-  const msg = document.getElementById('reply-txt').value.trim()
-  if (!msg) { toast('Message vide','e'); return }
-
-  fetch(`/tickets/${currentTicketId}/reply`, {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({message: msg})
-  }).then(r=>r.json()).then(d=>{
-    if (d.status==='ok') {
-      document.getElementById('reply-txt').value=''
-      toast('✓ Réponse envoyée','s')
-      // Recharger la conversation
-      openTicket(currentTicketId)
-    } else toast('❌ '+d.message,'e')
-  })
-}
-
-// FERMER TICKET (admin)
-function closeTicket(id) {
-  fetch(`/tickets/${id}/close`, {method:'POST'}).then(r=>r.json()).then(d=>{
-    if (d.status==='ok') { toast('✓ Ticket fermé','i'); openTicket(id) }
+  const msg=document.getElementById('reply-txt').value.trim()
+  if(!msg){toast('Message vide','e');return}
+  fetch('/tickets/'+currentTicketId+'/reply',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg})})
+  .then(r=>r.json()).then(d=>{
+    if(d.status==='ok'){document.getElementById('reply-txt').value='';toast('✓ Réponse envoyée','s');openTicket(currentTicketId)}
     else toast('❌ '+d.message,'e')
   })
 }
-
-// SUPPRIMER TICKET (admin)
-function deleteTicket(id) {
-  if (!confirm('Supprimer ce ticket ?')) return
-  fetch(`/tickets/${id}/delete`, {method:'POST'}).then(r=>r.json()).then(d=>{
-    if (d.status==='ok') { toast('✓ Ticket supprimé','i'); backToTickets() }
-    else toast('❌ '+d.message,'e')
-  })
-}
-
+function closeTicket(id){fetch('/tickets/'+id+'/close',{method:'POST'}).then(r=>r.json()).then(d=>{if(d.status==='ok'){toast('✓ Fermé','i');openTicket(id)}else toast('❌ '+d.message,'e')})}
+function deleteTicket(id){if(!confirm('Supprimer ce ticket ?'))return;fetch('/tickets/'+id+'/delete',{method:'POST'}).then(r=>r.json()).then(d=>{if(d.status==='ok'){toast('✓ Supprimé','i');backToTickets()}else toast('❌ '+d.message,'e')})}
 </script>
 </body>
 </html>
