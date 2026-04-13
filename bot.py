@@ -381,15 +381,13 @@ def delete_device(name, user_id):
     conn.close()
 
 
-# ===== TEXTNOW SENDER =====
+# ===== TEXTNOW SENDER (FIXED) =====
 def send_textnow(phone, message, username, sid_cookie, xsrf_token=""):
     try:
         sess = requests.Session()
 
-        # Cookie principal de session TextNow
+        # Mettre les cookies de base
         sess.cookies.set("connect.sid", sid_cookie, domain=".textnow.com")
-
-        # Cookie XSRF — requis pour valider les requêtes POST
         if xsrf_token:
             sess.cookies.set("XSRF-TOKEN", xsrf_token, domain=".textnow.com")
 
@@ -397,8 +395,35 @@ def send_textnow(phone, message, username, sid_cookie, xsrf_token=""):
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
             "Referer": "https://www.textnow.com/messaging",
             "Origin": "https://www.textnow.com",
+        })
+
+        # Étape 1 : faire un GET pour que TextNow génère un XSRF-TOKEN frais
+        try:
+            get_resp = sess.get(
+                f"https://www.textnow.com/api/users/{username}/messages",
+                params={
+                    "contact_value": phone,
+                    "contact_type": 2,
+                    "start_message_id": ""
+                },
+                timeout=30
+            )
+            # Récupérer le token frais depuis les cookies de la réponse
+            fresh_csrf = sess.cookies.get("XSRF-TOKEN", domain=".textnow.com")
+            if fresh_csrf:
+                csrf = fresh_csrf
+                print(f"🔑 CSRF frais récupéré: {csrf[:20]}...")
+            else:
+                csrf = xsrf_token
+                print(f"⚠️  Pas de CSRF frais, utilisation du token sauvegardé")
+        except Exception as e:
+            print(f"⚠️  GET échoué, on continue quand même: {e}")
+            csrf = xsrf_token
+
+        # Étape 2 : envoyer le message avec le token CSRF valide
+        sess.headers.update({
             "Content-Type": "application/json",
-            "X-XSRF-TOKEN": xsrf_token if xsrf_token else "",
+            "X-XSRF-TOKEN": csrf if csrf else "",
         })
 
         payload = {
