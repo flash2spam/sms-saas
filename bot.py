@@ -382,32 +382,24 @@ def delete_device(name, user_id):
     conn.close()
 
 
-# ===== TEXTNOW SENDER — VERSION FINALE =====
+# ===== TEXTNOW SENDER =====
 def send_textnow(phone, message, username, sid_cookie, xsrf_token=""):
     try:
         sess = requests.Session()
-
-        # URL-décoder le connect.sid (il arrive souvent encodé s%3A...)
         decoded_sid = unquote(sid_cookie)
-
         sess.cookies.set("connect.sid", decoded_sid, domain=".textnow.com")
-
         sess.headers.update({
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
             "Referer": "https://www.textnow.com/messaging",
             "Origin": "https://www.textnow.com",
         })
 
-        # Étape 1 — charger /messaging pour que TextNow émette un XSRF-TOKEN frais
         try:
             sess.get("https://www.textnow.com/messaging", timeout=30)
         except Exception as e:
             print(f"⚠️  GET /messaging échoué: {e}")
 
-        # Récupérer le token frais depuis les cookies de session
         fresh_csrf_raw = sess.cookies.get("XSRF-TOKEN")
-
-        # Le token dans le cookie est URL-encodé, le header doit être URL-décodé
         if fresh_csrf_raw:
             csrf = unquote(fresh_csrf_raw)
             print(f"🔑 CSRF frais (décodé): {csrf[:25]}...")
@@ -418,7 +410,6 @@ def send_textnow(phone, message, username, sid_cookie, xsrf_token=""):
             csrf = ""
             print("❌ Aucun CSRF token disponible")
 
-        # Étape 2 — POST avec le token décodé dans le header X-XSRF-TOKEN
         sess.headers.update({
             "Content-Type": "application/json",
             "X-XSRF-TOKEN": csrf,
@@ -447,6 +438,114 @@ def send_textnow(phone, message, username, sid_cookie, xsrf_token=""):
     except Exception as e:
         print(f"❌ TextNow ERREUR: {e}")
         return False
+
+
+# ===== AUTO-REPLY TEXTNOW =====
+_autoreply_threads = {}
+_autoreply_lock = threading.Lock()
+
+
+def get_textnow_inbox(username, sid_cookie):
+    """Récupère les derniers messages reçus sur TextNow"""
+    try:
+        sess = requests.Session()
+        decoded_sid = unquote(sid_cookie)
+        sess.cookies.set("connect.sid", decoded_sid, domain=".textnow.com")
+        sess.headers.update({
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Referer": "https://www.textnow.com/messaging",
+        })
+        r = sess.get(
+            f"https://www.textnow.com/api/users/{username}/messages",
+            params={"contact_type": 2, "start_message_id": "", "direction": "past"},
+            timeout=30
+        )
+        if r.status_code == 200:
+            data = r.json()
+            return data.get("messages", [])
+        print(f"⚠️ Inbox TextNow → {r.status_code}")
+        return []
+    except Exception as e:
+        print(f"❌ get_textnow_inbox ERREUR: {e}")
+        return []
+
+
+def autoreply_loop(user_id, device, reply_message, interval=30):
+    """Boucle d'auto-reply : vérifie les nouveaux messages entrants et répond"""
+    print(f"🤖 Auto-reply démarré (user {user_id}, device {device['name']})")
+    seen_ids = set()
+
+    # Premier passage : noter les messages existants sans répondre
+    existing = get_textnow_inbox(device["username"], device["sid_cookie"])
+    for m in existing:
+        seen_ids.add(m.get("id"))
+    print(f"📋 Auto-reply : {len(seen_ids)} messages existants ignorés")
+
+    while True:
+        with _autoreply_lock:
+            thread_info = _autoreply_threads.get(user_id)
+            if not thread_info or not thread_info.get("running"):
+                break
+
+        try:
+            # Récupère les infos fraîches du device (cookies peuvent changer)
+            devices = get_devices(user_id)
+            d = next((x for x in devices if x["name"] == device["name"] and x["active"]), None)
+            if not d:
+                print(f"⚠️ Device {device['name']} introuvable ou inactif — auto-reply en pause")
+                time.sleep(interval)
+                continue
+
+            messages = get_textnow_inbox(d["username"], d["sid_cookie"])
+            for msg in messages:
+                msg_id = msg.get("id")
+                direction = msg.get("message_direction")  # 1 = reçu, 2 = envoyé
+                if msg_id in seen_ids:
+                    continue
+                seen_ids.add(msg_id)
+                if direction == 1:  # message reçu
+                    contact = msg.get("contact_value", "")
+                    print(f"📩 Nouveau message de {contact} — auto-reply en cours...")
+                    send_textnow(contact, reply_message, d["username"], d["sid_cookie"], d.get("xsrf_token", ""))
+
+        except Exception as e:
+            print(f"❌ autoreply_loop ERREUR: {e}")
+
+        time.sleep(interval)
+
+    print(f"🛑 Auto-reply arrêté (user {user_id})")
+
+
+def start_autoreply(user_id, reply_message, interval=30):
+    """Démarre l'auto-reply pour le premier device TextNow actif"""
+    devices = [d for d in get_devices(user_id) if d["active"] and d["type"] == "textnow"]
+    if not devices:
+        print(f"❌ Aucun device TextNow actif pour auto-reply (user {user_id})")
+        return False
+    device = devices[0]
+    stop_autoreply(user_id)  # stoppe l'ancien si existant
+    time.sleep(0.5)
+    with _autoreply_lock:
+        _autoreply_threads[user_id] = {"running": True, "thread": None}
+    t = threading.Thread(target=autoreply_loop, args=(user_id, device, reply_message, interval), daemon=True)
+    t.start()
+    with _autoreply_lock:
+        _autoreply_threads[user_id]["thread"] = t
+    return True
+
+
+def stop_autoreply(user_id):
+    with _autoreply_lock:
+        if user_id in _autoreply_threads:
+            _autoreply_threads[user_id]["running"] = False
+
+
+def autoreply_status(user_id):
+    with _autoreply_lock:
+        info = _autoreply_threads.get(user_id)
+        if info and info.get("running") and info.get("thread") and info["thread"].is_alive():
+            return True
+    return False
 
 
 # ===== BLACKLIST =====
