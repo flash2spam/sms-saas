@@ -207,7 +207,8 @@ def add_device():
             d.get("username", ""),
             d.get("password", ""),
             d.get("sid_cookie", ""),
-            uid()
+            uid(),
+            d.get("xsrf_token", "")   # ← nouveau champ XSRF
         )
         return {"status": "ok"}
     except Exception as e:
@@ -403,7 +404,6 @@ def get_ticket_replies(ticket_id):
     if not ticket:
         return jsonify({"status": "error", "message": "Ticket introuvable"}), 404
     replies = bot.get_replies(ticket_id)
-    # Marquer comme lu
     bot.mark_ticket_read(ticket_id, user_id, role)
     return jsonify({"ticket": ticket, "replies": replies})
 
@@ -420,7 +420,6 @@ def reply_ticket(ticket_id):
     if not message:
         return jsonify({"status": "error", "message": "Message vide"})
     bot.add_reply(ticket_id, user_id, session.get("username"), role, message)
-    # Changer statut: si admin répond → answered, si user répond → open
     new_status = "answered" if role == "admin" else "open"
     bot.update_ticket_status(ticket_id, new_status)
     return jsonify({"status": "ok"})
