@@ -69,6 +69,7 @@ def init_db():
         success INTEGER DEFAULT 0,
         fail INTEGER DEFAULT 0,
         sent INTEGER DEFAULT 0,
+        platform TEXT DEFAULT 'windows',
         FOREIGN KEY(user_id) REFERENCES users(id)
     )
     """)
@@ -77,6 +78,7 @@ def init_db():
         ("type", "TEXT DEFAULT 'smsgate'"),
         ("sid_cookie", "TEXT DEFAULT ''"),
         ("xsrf_token", "TEXT DEFAULT ''"),
+        ("platform", "TEXT DEFAULT 'windows'"),
     ]:
         try:
             c.execute(f"ALTER TABLE devices ADD COLUMN {col} {defval}")
@@ -168,6 +170,36 @@ def init_db():
 
     conn.commit()
     conn.close()
+
+
+# ===== USER AGENT HELPER =====
+# Toujours connecté via Chrome — le platform contrôle quel Chrome UA on envoie
+_USER_AGENTS = {
+    "windows": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/124.0.0.0 Safari/537.36"
+    ),
+    "android": (
+        "Mozilla/5.0 (Linux; Android 14; Pixel 8) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/124.0.0.0 Mobile Safari/537.36"
+    ),
+    "iphone": (
+        "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) "
+        "AppleWebKit/605.1.15 (KHTML, like Gecko) "
+        "CriOS/124.0.0.0 Mobile/15E148 Safari/604.1"
+    ),
+    "mac": (
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/124.0.0.0 Safari/537.36"
+    ),
+}
+
+def get_user_agent(platform: str) -> str:
+    """Retourne le bon User-Agent Chrome selon la plateforme du device."""
+    return _USER_AGENTS.get((platform or "windows").lower(), _USER_AGENTS["windows"])
 
 
 # ===== GESTION UTILISATEURS =====
@@ -350,13 +382,13 @@ def get_random_message(user_id):
 
 
 # ===== DEVICES =====
-def add_device(name, device_type, device_id, username, password, sid_cookie, user_id, xsrf_token=""):
+def add_device(name, device_type, device_id, username, password, sid_cookie, user_id, xsrf_token="", platform="windows"):
     conn = sqlite3.connect(DB)
     c = conn.cursor()
     c.execute("""
-        INSERT INTO devices (user_id, name, type, device_id, username, password, sid_cookie, xsrf_token, active, success, fail, sent)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, 0, 0, 0)
-    """, (user_id, name, device_type, device_id, username, password, sid_cookie, xsrf_token))
+        INSERT INTO devices (user_id, name, type, device_id, username, password, sid_cookie, xsrf_token, active, success, fail, sent, platform)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, 0, 0, 0, ?)
+    """, (user_id, name, device_type, device_id, username, password, sid_cookie, xsrf_token, platform))
     conn.commit()
     conn.close()
 
@@ -365,7 +397,7 @@ def get_devices(user_id):
     conn = sqlite3.connect(DB)
     c = conn.cursor()
     rows = c.execute("""
-        SELECT id, user_id, name, type, device_id, username, password, sid_cookie, xsrf_token, active, success, fail, sent
+        SELECT id, user_id, name, type, device_id, username, password, sid_cookie, xsrf_token, active, success, fail, sent, platform
         FROM devices WHERE user_id=?
     """, (user_id,)).fetchall()
     conn.close()
@@ -374,7 +406,8 @@ def get_devices(user_id):
         "device_id": r[4], "username": r[5], "password": r[6],
         "sid_cookie": r[7], "xsrf_token": r[8] or "",
         "active": bool(r[9]),
-        "success": r[10], "fail": r[11], "sent": r[12]
+        "success": r[10], "fail": r[11], "sent": r[12],
+        "platform": r[13] or "windows"
     } for r in rows]
 
 
@@ -395,16 +428,32 @@ def delete_device(name, user_id):
 
 
 # ===== TEXTNOW SENDER =====
-def send_textnow(phone, message, username, sid_cookie, xsrf_token=""):
+def send_textnow(phone, message, username, sid_cookie, xsrf_token="", platform="windows"):
+    """
+    Envoie un SMS via TextNow.
+    platform : 'windows' | 'android' | 'iphone' | 'mac'
+    Le User-Agent Chrome correspond à la plateforme où les cookies ont été copiés.
+    """
     try:
+        ua = get_user_agent(platform)
         sess = requests.Session()
         decoded_sid = unquote(sid_cookie)
         sess.cookies.set("connect.sid", decoded_sid, domain=".textnow.com")
         sess.headers.update({
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "User-Agent": ua,
             "Referer": "https://www.textnow.com/messaging",
             "Origin": "https://www.textnow.com",
+            "Accept": "application/json, text/plain, */*",
+            "Accept-Language": "en-US,en;q=0.9",
+            "sec-ch-ua": '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
+            "sec-ch-ua-mobile": "?1" if platform in ("android", "iphone") else "?0",
+            "sec-ch-ua-platform": f'"{platform.capitalize()}"',
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "same-origin",
         })
+
+        print(f"🌐 Platform: {platform} | UA: {ua[:60]}...")
 
         try:
             sess.get("https://www.textnow.com/messaging", timeout=30)
@@ -442,7 +491,7 @@ def send_textnow(phone, message, username, sid_cookie, xsrf_token=""):
             json=payload,
             timeout=30
         )
-        print(f"📨 TextNow → {phone} | {r.status_code}")
+        print(f"📨 TextNow [{platform}] → {phone} | {r.status_code}")
         if r.status_code >= 300:
             print(f"   ↳ Réponse: {r.text[:300]}")
         return r.status_code < 300
@@ -502,14 +551,17 @@ def _cleanup_seen_ids(user_id, device_name, keep_last=500):
     conn.close()
 
 
-def get_textnow_inbox(username, sid_cookie):
+def get_textnow_inbox(username, sid_cookie, platform="windows"):
     try:
+        ua = get_user_agent(platform)
         sess = requests.Session()
         decoded_sid = unquote(sid_cookie)
         sess.cookies.set("connect.sid", decoded_sid, domain=".textnow.com")
         sess.headers.update({
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "User-Agent": ua,
             "Referer": "https://www.textnow.com/messaging",
+            "Accept": "application/json, text/plain, */*",
+            "sec-ch-ua-mobile": "?1" if platform in ("android", "iphone") else "?0",
         })
         r = sess.get(
             f"https://www.textnow.com/api/users/{username}/messages",
@@ -519,7 +571,7 @@ def get_textnow_inbox(username, sid_cookie):
         if r.status_code == 200:
             data = r.json()
             return data.get("messages", [])
-        print(f"⚠️ Inbox TextNow → {r.status_code}")
+        print(f"⚠️ Inbox TextNow [{platform}] → {r.status_code}")
         return []
     except Exception as e:
         print(f"❌ get_textnow_inbox ERREUR: {e}")
@@ -528,11 +580,12 @@ def get_textnow_inbox(username, sid_cookie):
 
 def autoreply_loop(user_id, device, reply_message, interval=30):
     device_name = device["name"]
-    print(f"🤖 Auto-reply démarré (user {user_id}, device {device_name})")
+    platform = device.get("platform", "windows")
+    print(f"🤖 Auto-reply démarré (user {user_id}, device {device_name}, platform {platform})")
 
     seen_ids = _load_seen_ids(user_id, device_name)
 
-    existing = get_textnow_inbox(device["username"], device["sid_cookie"])
+    existing = get_textnow_inbox(device["username"], device["sid_cookie"], platform)
     new_seen = 0
     for m in existing:
         msg_id = str(m.get("id", ""))
@@ -558,7 +611,8 @@ def autoreply_loop(user_id, device, reply_message, interval=30):
                 time.sleep(interval)
                 continue
 
-            messages = get_textnow_inbox(d["username"], d["sid_cookie"])
+            platform = d.get("platform", "windows")
+            messages = get_textnow_inbox(d["username"], d["sid_cookie"], platform)
             for msg in messages:
                 msg_id = str(msg.get("id", ""))
                 if not msg_id or msg_id in seen_ids:
@@ -571,7 +625,7 @@ def autoreply_loop(user_id, device, reply_message, interval=30):
                 if direction == 1:
                     contact = msg.get("contact_value", "")
                     print(f"📩 [{device_name}] Nouveau message de {contact} — auto-reply en cours...")
-                    send_textnow(contact, reply_message, d["username"], d["sid_cookie"], d.get("xsrf_token", ""))
+                    send_textnow(contact, reply_message, d["username"], d["sid_cookie"], d.get("xsrf_token", ""), platform)
 
             cleanup_counter += 1
             if cleanup_counter >= 100:
@@ -586,7 +640,6 @@ def autoreply_loop(user_id, device, reply_message, interval=30):
     print(f"🛑 Auto-reply arrêté (user {user_id}, device {device_name})")
 
 
-# ===== CORRECTION : un thread par device TextNow =====
 def start_autoreply(user_id, reply_message, interval=30):
     """Démarre l'auto-reply pour TOUS les devices TextNow actifs"""
     devices = [d for d in get_devices(user_id) if d["active"] and d["type"] == "textnow"]
@@ -609,7 +662,7 @@ def start_autoreply(user_id, reply_message, interval=30):
         )
         t.start()
         threads.append(t)
-        print(f"▶️  Auto-reply lancé pour device: {device['name']}")
+        print(f"▶️  Auto-reply lancé pour device: {device['name']} (platform: {device.get('platform', 'windows')})")
 
     with _autoreply_lock:
         _autoreply_threads[user_id]["threads"] = threads
@@ -886,7 +939,8 @@ def main(user_id):
                     phone, message,
                     device["username"],
                     device["sid_cookie"],
-                    device.get("xsrf_token", "")
+                    device.get("xsrf_token", ""),
+                    device.get("platform", "windows")   # ← platform passé ici
                 )
             else:
                 r = requests.post(
