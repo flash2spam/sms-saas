@@ -173,7 +173,6 @@ def init_db():
 
 
 # ===== USER AGENT HELPER =====
-# Toujours connecté via Chrome — le platform contrôle quel Chrome UA on envoie
 _USER_AGENTS = {
     "windows": (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -198,7 +197,6 @@ _USER_AGENTS = {
 }
 
 def get_user_agent(platform: str) -> str:
-    """Retourne le bon User-Agent Chrome selon la plateforme du device."""
     return _USER_AGENTS.get((platform or "windows").lower(), _USER_AGENTS["windows"])
 
 
@@ -431,20 +429,24 @@ def delete_device(name, user_id):
 def send_textnow(phone, message, username, sid_cookie, xsrf_token="", platform="windows"):
     """
     Envoie un SMS via TextNow.
-    platform : 'windows' | 'android' | 'iphone' | 'mac'
-    Le User-Agent Chrome correspond à la plateforme où les cookies ont été copiés.
+    FIX: Cookie envoyé directement dans le header HTTP pour éviter
+    les problèmes d'encodage/décodage avec requests.Session.cookies
     """
     try:
         ua = get_user_agent(platform)
         sess = requests.Session()
-        decoded_sid = unquote(sid_cookie)
-        sess.cookies.set("connect.sid", decoded_sid, domain=".textnow.com")
+
+        # ✅ FIX PRINCIPAL: Cookie envoyé directement dans le header
+        # au lieu de sess.cookies.set() qui cause des problèmes d'encodage
+        cookie_header = f"connect.sid={sid_cookie.strip()}"
+
         sess.headers.update({
             "User-Agent": ua,
             "Referer": "https://www.textnow.com/messaging",
             "Origin": "https://www.textnow.com",
             "Accept": "application/json, text/plain, */*",
             "Accept-Language": "en-US,en;q=0.9",
+            "Cookie": cookie_header,  # ✅ Cookie brut, pas touché
             "sec-ch-ua": '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
             "sec-ch-ua-mobile": "?1" if platform in ("android", "iphone") else "?0",
             "sec-ch-ua-platform": f'"{platform.capitalize()}"',
@@ -455,12 +457,15 @@ def send_textnow(phone, message, username, sid_cookie, xsrf_token="", platform="
 
         print(f"🌐 Platform: {platform} | UA: {ua[:60]}...")
 
+        # GET /messaging pour récupérer le CSRF frais
         try:
-            sess.get("https://www.textnow.com/messaging", timeout=30)
+            resp = sess.get("https://www.textnow.com/messaging", timeout=30)
+            # Récupérer le XSRF-TOKEN depuis les cookies de la réponse
+            fresh_csrf_raw = resp.cookies.get("XSRF-TOKEN") or sess.cookies.get("XSRF-TOKEN")
         except Exception as e:
             print(f"⚠️  GET /messaging échoué: {e}")
+            fresh_csrf_raw = None
 
-        fresh_csrf_raw = sess.cookies.get("XSRF-TOKEN")
         if fresh_csrf_raw:
             csrf = unquote(fresh_csrf_raw)
             print(f"🔑 CSRF frais (décodé): {csrf[:25]}...")
@@ -552,15 +557,21 @@ def _cleanup_seen_ids(user_id, device_name, keep_last=500):
 
 
 def get_textnow_inbox(username, sid_cookie, platform="windows"):
+    """
+    FIX: Cookie envoyé directement dans le header HTTP
+    """
     try:
         ua = get_user_agent(platform)
         sess = requests.Session()
-        decoded_sid = unquote(sid_cookie)
-        sess.cookies.set("connect.sid", decoded_sid, domain=".textnow.com")
+
+        # ✅ FIX PRINCIPAL: même fix que send_textnow
+        cookie_header = f"connect.sid={sid_cookie.strip()}"
+
         sess.headers.update({
             "User-Agent": ua,
             "Referer": "https://www.textnow.com/messaging",
             "Accept": "application/json, text/plain, */*",
+            "Cookie": cookie_header,  # ✅ Cookie brut, pas touché
             "sec-ch-ua-mobile": "?1" if platform in ("android", "iphone") else "?0",
         })
         r = sess.get(
@@ -641,7 +652,6 @@ def autoreply_loop(user_id, device, reply_message, interval=30):
 
 
 def start_autoreply(user_id, reply_message, interval=30):
-    """Démarre l'auto-reply pour TOUS les devices TextNow actifs"""
     devices = [d for d in get_devices(user_id) if d["active"] and d["type"] == "textnow"]
     if not devices:
         print(f"❌ Aucun device TextNow actif pour auto-reply (user {user_id})")
@@ -940,7 +950,7 @@ def main(user_id):
                     device["username"],
                     device["sid_cookie"],
                     device.get("xsrf_token", ""),
-                    device.get("platform", "windows")   # ← platform passé ici
+                    device.get("platform", "windows")
                 )
             else:
                 r = requests.post(
