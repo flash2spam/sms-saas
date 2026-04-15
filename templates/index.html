@@ -78,12 +78,14 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .input{background:var(--bg);border:1px solid var(--border-b);border-radius:7px;padding:9px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;outline:none;width:100%;transition:all 0.2s;}
 .input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim);}
 .input::placeholder{color:var(--text-muted);}
+select.input option{background:var(--surface-2);color:var(--text);}
 textarea.input{resize:vertical;min-height:80px;line-height:1.6;}
 .field{margin-bottom:14px;}.field-label{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px;display:block;}
 .form-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.platform-hint{font-size:10px;color:var(--text-muted);margin-top:5px;padding:6px 10px;background:rgba(255,170,0,0.06);border:1px solid rgba(255,170,0,0.15);border-radius:5px;}
 .device-card{background:var(--surface-2);border:1px solid var(--border-b);border-radius:9px;padding:14px 18px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:16px;transition:border-color 0.2s;}
 .device-card.dev-on{border-color:rgba(0,232,122,0.25);}
-.device-name{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px;}
+.device-name{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
 .status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
 .status-dot.on{background:var(--success);box-shadow:0 0 6px var(--success);}.status-dot.off{background:var(--text-muted);}
 .device-stats{display:flex;gap:16px;margin-top:6px;font-size:11px;color:var(--text-muted);}
@@ -175,7 +177,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
 .empty{text-align:center;padding:48px;color:var(--text-muted);}
 .empty-icon{font-size:28px;margin-bottom:12px;opacity:0.3;}.empty-text{font-size:12px;}
 ::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-thumb{background:var(--border-b);border-radius:4px;}
-/* AUTO-REPLY STATUS PILL */
 .ar-pill{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:20px;border:1px solid var(--border-b);background:var(--surface-2);font-size:11px;}
 .ar-dot{width:7px;height:7px;border-radius:50%;background:var(--text-muted);transition:all 0.3s;}
 .ar-dot.active{background:var(--success);box-shadow:0 0 8px var(--success);animation:blink 1.5s infinite;}
@@ -293,6 +294,18 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
           <div class="field"><label class="field-label">Username TextNow</label><input class="input" id="tn-user" placeholder="ton_username_textnow"></div>
           <div class="field" style="grid-column:span 2"><label class="field-label">Cookie connect.sid</label><input class="input" id="tn-sid" placeholder="s:YndicqWD-L3mh2m... (valeur complète)"></div>
           <div class="field" style="grid-column:span 2"><label class="field-label">Cookie XSRF-TOKEN</label><input class="input" id="tn-xsrf" placeholder="74ftUgxc-4U... (valeur complète)"></div>
+          <!-- ===== NOUVEAU : DROPDOWN PLATFORM ===== -->
+          <div class="field" style="grid-column:span 2">
+            <label class="field-label">Plateforme du navigateur utilisé</label>
+            <select class="input" id="tn-platform">
+              <option value="windows">🖥️ Windows (Chrome Desktop)</option>
+              <option value="android">🤖 Android (Chrome Mobile)</option>
+              <option value="iphone">🍎 iPhone (Chrome iOS / CriOS)</option>
+              <option value="mac">🍏 macOS (Chrome Mac)</option>
+            </select>
+            <div class="platform-hint">⚠️ Choisis la plateforme sur laquelle tu t'es <strong>connecté à TextNow</strong>. Un mauvais choix → erreur 403.</div>
+          </div>
+          <!-- ===== FIN DROPDOWN ===== -->
         </div>
       </div>
       <div style="display:flex;gap:8px;margin-top:4px">
@@ -365,8 +378,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
   <!-- SETTINGS -->
   <div class="tab-section" id="tab-settings">
     <div class="sec-header"><div><div class="sec-title">Réglages</div></div><button class="btn btn-primary" onclick="saveSettings()">💾 Sauvegarder</button></div>
-
-    <!-- AUTO-REPLY TEXTNOW -->
     <div class="panel">
       <div class="panel-title">🤖 Auto-Reply TextNow</div>
       <div style="background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.15);border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:12px;color:var(--text-muted);line-height:1.7">
@@ -392,16 +403,12 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
         <div class="ar-pill"><div class="ar-dot" id="ar-dot"></div><span id="ar-status-txt">Inactif</span></div>
       </div>
     </div>
-
-    <!-- TIMING -->
     <div class="panel">
       <div class="panel-title">Timing d'envoi</div>
       <div class="settings-row"><div><div class="s-label">Délai entre SMS (secondes)</div></div><div class="settings-ctrl"><div class="range-row"><input type="range" min="1" max="60" value="2" id="r-delay" oninput="document.getElementById('rv-delay').textContent=this.value+'s'"><div class="range-val" id="rv-delay">2s</div></div></div></div>
       <div class="settings-row"><div><div class="s-label">Pause après X SMS</div></div><div class="settings-ctrl"><div class="range-row"><input type="range" min="1" max="100" value="10" id="r-every" oninput="document.getElementById('rv-every').textContent=this.value"><div class="range-val" id="rv-every">10</div></div></div></div>
       <div class="settings-row"><div><div class="s-label">Durée de la pause (secondes)</div></div><div class="settings-ctrl"><div class="range-row"><input type="range" min="5" max="300" value="30" id="r-ptime" oninput="document.getElementById('rv-ptime').textContent=this.value+'s'"><div class="range-val" id="rv-ptime">30s</div></div></div></div>
     </div>
-
-    <!-- MON COMPTE -->
     <div class="panel">
       <div class="panel-title">Mon compte</div>
       <div style="display:flex;gap:10px;align-items:center">
@@ -417,11 +424,11 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
     <div class="panel"><div class="panel-title">📱 Étape 1 — Installer SMS Gate</div><div style="line-height:1.8;color:var(--text-muted)"><p style="margin:0 0 12px">Installe <strong style="color:var(--text)">SMS Gate</strong> sur ton téléphone Android.</p><div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px"><a href="https://play.google.com/store/apps/details?id=me.capcom.smsgateway" target="_blank" class="btn btn-primary" style="text-decoration:none">▶ Google Play</a></div></div></div>
     <div class="panel"><div class="panel-title">🔑 Étape 2 — Créer un compte SMS Gate</div><div style="line-height:1.8;color:var(--text-muted)">Ouvre l'app → crée un compte → note le <strong style="color:var(--text)">Device ID</strong> affiché (ex: <code style="background:rgba(255,255,255,0.08);padding:2px 6px;border-radius:4px">android-xxxx</code>)</div></div>
     <div class="panel"><div class="panel-title">📡 Étape 3 — Ajouter le device</div><div style="line-height:1.8;color:var(--text-muted)">Va dans <strong style="color:var(--text)">Devices</strong> → <strong style="color:var(--text)">+ Ajouter</strong> → choisis <strong style="color:var(--text)">📱 SMS Gate</strong> → remplis Nom, Device ID, Username, Password.</div></div>
-    <div class="panel"><div class="panel-title">💬 Option TextNow (sans téléphone)</div><div style="line-height:1.8;color:var(--text-muted)"><p style="margin:0 0 12px">Crée un compte sur <a href="https://www.textnow.com" target="_blank" style="color:var(--accent)">textnow.com</a>. Dans Devices → + Ajouter → choisis <strong style="color:var(--text)">💬 TextNow</strong>.</p><p style="margin:0 0 12px">Pour les cookies : F12 → Application → Cookies → textnow.com → copie <strong style="color:var(--warn)">connect.sid</strong> et <strong style="color:var(--warn)">XSRF-TOKEN</strong>.</p><div style="background:rgba(255,170,0,0.08);border:1px solid rgba(255,170,0,0.2);border-radius:8px;padding:12px;font-size:12px;color:var(--warn)">⚠️ Les cookies expirent — si ça commence à échouer, récupère de nouveaux cookies.</div></div></div>
+    <div class="panel"><div class="panel-title">💬 Option TextNow (sans téléphone)</div><div style="line-height:1.8;color:var(--text-muted)"><p style="margin:0 0 12px">Crée un compte sur <a href="https://www.textnow.com" target="_blank" style="color:var(--accent)">textnow.com</a>. Dans Devices → + Ajouter → choisis <strong style="color:var(--text)">💬 TextNow</strong>.</p><p style="margin:0 0 12px">Pour les cookies : F12 → Application → Cookies → textnow.com → copie <strong style="color:var(--warn)">connect.sid</strong> et <strong style="color:var(--warn)">XSRF-TOKEN</strong>.</p><p style="margin:0 0 12px">⚠️ <strong style="color:var(--warn)">Important :</strong> Sélectionne la bonne <strong style="color:var(--text)">Plateforme</strong> dans le formulaire (Windows/Android/iPhone/Mac) selon le navigateur utilisé.</p><div style="background:rgba(255,170,0,0.08);border:1px solid rgba(255,170,0,0.2);border-radius:8px;padding:12px;font-size:12px;color:var(--warn)">⚠️ Les cookies expirent — si ça commence à échouer (403), récupère de nouveaux cookies.</div></div></div>
     <div class="panel"><div class="panel-title">📋 Étape 4 — Contacts CSV</div><div style="line-height:1.8;color:var(--text-muted)">Format requis :<br><code style="color:var(--accent)">phone<br>+15141234567<br>+15139876543</code></div></div>
     <div class="panel"><div class="panel-title">❓ Problèmes fréquents</div><div id="faq-container">
       <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this.parentElement)">📵 Device inactif / déconnecté <span class="faq-arr">▾</span></div><div class="faq-a">Vérifie que SMS Gate est ouverte. Désactive l'optimisation batterie pour l'app.</div></div>
-      <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this.parentElement)">❌ TextNow retourne 403 <span class="faq-arr">▾</span></div><div class="faq-a">Tes cookies ont expiré. Retourne sur textnow.com, connecte-toi, récupère les nouveaux cookies connect.sid et XSRF-TOKEN, supprime le device et recrée-le.</div></div>
+      <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this.parentElement)">❌ TextNow retourne 403 <span class="faq-arr">▾</span></div><div class="faq-a">Soit tes cookies ont expiré, soit la mauvaise plateforme est sélectionnée. Vérifie le champ "Plateforme" (Windows/iPhone/Android/Mac) — il doit correspondre au navigateur utilisé lors de la connexion. Sinon, récupère de nouveaux cookies.</div></div>
       <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this.parentElement)">❌ Tous les SMS échouent <span class="faq-arr">▾</span></div><div class="faq-a">Vérifie Device ID, username et password. Augmente les pauses dans Réglages.</div></div>
       <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this.parentElement)">📂 CSV ne s'uploade pas <span class="faq-arr">▾</span></div><div class="faq-a">Première ligne doit être exactement <code>phone</code>. Enregistre en "CSV UTF-8" depuis Excel.</div></div>
       <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this.parentElement)">🔄 Bot s'arrête tout seul <span class="faq-arr">▾</span></div><div class="faq-a">Plus de contacts dans le CSV ou aucun device actif. Vérifie les deux.</div></div>
@@ -507,6 +514,9 @@ let currentUser = null
 let currentTicketId = null
 let currentTicketFilter = 'all'
 let currentDeviceType = 'smsgate'
+
+// Mapping platform → label affiché dans la device card
+const PLATFORM_LABELS = { windows:'🖥️ Win', android:'🤖 Android', iphone:'🍎 iPhone', mac:'🍏 Mac' }
 
 document.addEventListener('DOMContentLoaded', () => {
   fetch('/me').then(r=>r.json()).then(u=>{
@@ -646,17 +656,28 @@ function loadDevices(){
     document.getElementById('v-devcount').textContent=active
     document.getElementById('v-devtotal').textContent=d.devices.length
     if(!d.devices.length){document.getElementById('dev-list').innerHTML='<div class="empty"><div class="empty-icon">◈</div><div class="empty-text">Aucun device.</div></div>';return}
-    document.getElementById('dev-list').innerHTML=d.devices.map(x=>`
-      <div class="device-card ${x.active?'dev-on':''}">
-        <div><div class="device-name"><div class="status-dot ${x.active?'on':'off'}"></div>${x.name} <span style="font-size:10px;padding:2px 7px;border-radius:4px;background:${x.type==='textnow'?'rgba(0,212,255,0.15)':'rgba(0,232,122,0.15)'};color:${x.type==='textnow'?'var(--accent)':'var(--success)'}">${x.type==='textnow'?'TextNow':'SMS Gate'}</span></div>
-        <div class="device-stats"><span>Envoyés: <span class="v-a">${x.sent||0}</span></span><span>✅ <span class="v-s">${x.success||0}</span></span><span>❌ <span class="v-f">${x.fail||0}</span></span></div></div>
+    document.getElementById('dev-list').innerHTML=d.devices.map(x=>{
+      // Badge type
+      const typeBadge = `<span style="font-size:10px;padding:2px 7px;border-radius:4px;background:${x.type==='textnow'?'rgba(0,212,255,0.15)':'rgba(0,232,122,0.15)'};color:${x.type==='textnow'?'var(--accent)':'var(--success)'}">${x.type==='textnow'?'TextNow':'SMS Gate'}</span>`
+      // Badge platform (TextNow seulement)
+      const platformBadge = (x.type==='textnow' && x.platform)
+        ? `<span style="font-size:10px;padding:2px 7px;border-radius:4px;background:rgba(255,170,0,0.12);color:var(--warn);margin-left:2px">${PLATFORM_LABELS[x.platform]||x.platform}</span>`
+        : ''
+      return `<div class="device-card ${x.active?'dev-on':''}">
+        <div>
+          <div class="device-name"><div class="status-dot ${x.active?'on':'off'}"></div>${x.name} ${typeBadge}${platformBadge}</div>
+          <div class="device-stats"><span>Envoyés: <span class="v-a">${x.sent||0}</span></span><span>✅ <span class="v-s">${x.success||0}</span></span><span>❌ <span class="v-f">${x.fail||0}</span></span></div>
+        </div>
         <div class="device-actions">
           <button class="btn ${x.active?'btn-warn':'btn-success'}" onclick="toggleDev('${x.name}')">${x.active?'⏸ Désactiver':'▶ Activer'}</button>
           <button class="btn btn-danger" onclick="delDev('${x.name}')">Supprimer</button>
         </div>
-      </div>`).join('')
+      </div>`
+    }).join('')
   })
 }
+
+// ===== addDevice — MODIFIÉ : inclut platform =====
 function addDevice(){
   let payload = {}
   if (currentDeviceType === 'textnow') {
@@ -664,8 +685,9 @@ function addDevice(){
     const u=document.getElementById('tn-user').value.trim()
     const s=document.getElementById('tn-sid').value.trim()
     const x=document.getElementById('tn-xsrf').value.trim()
+    const plt=document.getElementById('tn-platform').value   // ← NOUVEAU
     if(!n||!u||!s){toast('Nom, username et cookie connect.sid requis','e');return}
-    payload={name:n,type:'textnow',username:u,sid_cookie:s,xsrf_token:x}
+    payload={name:n,type:'textnow',username:u,sid_cookie:s,xsrf_token:x,platform:plt}  // ← platform inclus
   } else {
     const n=document.getElementById('d-name').value.trim()
     const d=document.getElementById('d-did').value.trim()
