@@ -150,7 +150,6 @@ def init_db():
     )
     """)
 
-    # Table pour sauvegarder les IDs de messages déjà traités par l'auto-reply
     c.execute("""
     CREATE TABLE IF NOT EXISTS autoreply_seen (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -459,7 +458,6 @@ _autoreply_lock = threading.Lock()
 
 
 def _load_seen_ids(user_id, device_name):
-    """Charge les IDs de messages déjà traités depuis la DB"""
     conn = sqlite3.connect(DB)
     c = conn.cursor()
     rows = c.execute(
@@ -471,7 +469,6 @@ def _load_seen_ids(user_id, device_name):
 
 
 def _save_seen_id(user_id, device_name, message_id):
-    """Sauvegarde un ID de message traité dans la DB"""
     conn = sqlite3.connect(DB)
     c = conn.cursor()
     try:
@@ -486,7 +483,6 @@ def _save_seen_id(user_id, device_name, message_id):
 
 
 def _cleanup_seen_ids(user_id, device_name, keep_last=500):
-    """Garde seulement les 500 derniers IDs pour éviter que la DB grossisse trop"""
     conn = sqlite3.connect(DB)
     c = conn.cursor()
     try:
@@ -507,7 +503,6 @@ def _cleanup_seen_ids(user_id, device_name, keep_last=500):
 
 
 def get_textnow_inbox(username, sid_cookie):
-    """Récupère les derniers messages reçus sur TextNow"""
     try:
         sess = requests.Session()
         decoded_sid = unquote(sid_cookie)
@@ -532,14 +527,11 @@ def get_textnow_inbox(username, sid_cookie):
 
 
 def autoreply_loop(user_id, device, reply_message, interval=30):
-    """Boucle d'auto-reply : vérifie les nouveaux messages entrants et répond"""
     device_name = device["name"]
     print(f"🤖 Auto-reply démarré (user {user_id}, device {device_name})")
 
-    # Charge les IDs déjà vus depuis la DB (survit aux redémarrages)
     seen_ids = _load_seen_ids(user_id, device_name)
 
-    # Premier passage : marquer TOUS les messages existants comme vus sans répondre
     existing = get_textnow_inbox(device["username"], device["sid_cookie"])
     new_seen = 0
     for m in existing:
@@ -548,7 +540,7 @@ def autoreply_loop(user_id, device, reply_message, interval=30):
             seen_ids.add(msg_id)
             _save_seen_id(user_id, device_name, msg_id)
             new_seen += 1
-    print(f"📋 Auto-reply : {len(seen_ids)} messages existants marqués comme vus ({new_seen} nouveaux en DB)")
+    print(f"📋 Auto-reply [{device_name}] : {len(seen_ids)} messages existants marqués comme vus ({new_seen} nouveaux en DB)")
 
     cleanup_counter = 0
 
@@ -559,7 +551,6 @@ def autoreply_loop(user_id, device, reply_message, interval=30):
                 break
 
         try:
-            # Récupère les infos fraîches du device
             devices = get_devices(user_id)
             d = next((x for x in devices if x["name"] == device_name and x["active"]), None)
             if not d:
@@ -573,45 +564,56 @@ def autoreply_loop(user_id, device, reply_message, interval=30):
                 if not msg_id or msg_id in seen_ids:
                     continue
 
-                # Nouveau message — on le marque vu AVANT d'envoyer pour éviter les doublons
                 seen_ids.add(msg_id)
                 _save_seen_id(user_id, device_name, msg_id)
 
-                direction = msg.get("message_direction")  # 1 = reçu, 2 = envoyé
-                if direction == 1:  # message reçu seulement
+                direction = msg.get("message_direction")
+                if direction == 1:
                     contact = msg.get("contact_value", "")
-                    print(f"📩 Nouveau message de {contact} — auto-reply en cours...")
+                    print(f"📩 [{device_name}] Nouveau message de {contact} — auto-reply en cours...")
                     send_textnow(contact, reply_message, d["username"], d["sid_cookie"], d.get("xsrf_token", ""))
 
-            # Nettoyage DB tous les 100 cycles pour éviter que ça grossisse
             cleanup_counter += 1
             if cleanup_counter >= 100:
                 _cleanup_seen_ids(user_id, device_name)
                 cleanup_counter = 0
 
         except Exception as e:
-            print(f"❌ autoreply_loop ERREUR: {e}")
+            print(f"❌ autoreply_loop [{device_name}] ERREUR: {e}")
 
         time.sleep(interval)
 
-    print(f"🛑 Auto-reply arrêté (user {user_id})")
+    print(f"🛑 Auto-reply arrêté (user {user_id}, device {device_name})")
 
 
+# ===== CORRECTION : un thread par device TextNow =====
 def start_autoreply(user_id, reply_message, interval=30):
-    """Démarre l'auto-reply pour le premier device TextNow actif"""
+    """Démarre l'auto-reply pour TOUS les devices TextNow actifs"""
     devices = [d for d in get_devices(user_id) if d["active"] and d["type"] == "textnow"]
     if not devices:
         print(f"❌ Aucun device TextNow actif pour auto-reply (user {user_id})")
         return False
-    device = devices[0]
+
     stop_autoreply(user_id)
     time.sleep(0.5)
+
     with _autoreply_lock:
-        _autoreply_threads[user_id] = {"running": True, "thread": None}
-    t = threading.Thread(target=autoreply_loop, args=(user_id, device, reply_message, interval), daemon=True)
-    t.start()
+        _autoreply_threads[user_id] = {"running": True, "threads": []}
+
+    threads = []
+    for device in devices:
+        t = threading.Thread(
+            target=autoreply_loop,
+            args=(user_id, device, reply_message, interval),
+            daemon=True
+        )
+        t.start()
+        threads.append(t)
+        print(f"▶️  Auto-reply lancé pour device: {device['name']}")
+
     with _autoreply_lock:
-        _autoreply_threads[user_id]["thread"] = t
+        _autoreply_threads[user_id]["threads"] = threads
+
     return True
 
 
@@ -624,8 +626,10 @@ def stop_autoreply(user_id):
 def autoreply_status(user_id):
     with _autoreply_lock:
         info = _autoreply_threads.get(user_id)
-        if info and info.get("running") and info.get("thread") and info["thread"].is_alive():
-            return True
+        if info and info.get("running"):
+            threads = info.get("threads", [])
+            if any(t.is_alive() for t in threads):
+                return True
     return False
 
 
