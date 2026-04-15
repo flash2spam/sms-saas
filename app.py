@@ -200,6 +200,12 @@ def add_device():
         else:
             if not d.get("device_id"):
                 return {"status": "error", "message": "Device ID requis pour SMS Gate"}
+
+        # Valider la plateforme (uniquement pour TextNow)
+        platform = d.get("platform", "windows")
+        if platform not in ("windows", "android", "iphone", "mac"):
+            platform = "windows"
+
         bot.add_device(
             d["name"],
             device_type,
@@ -208,7 +214,8 @@ def add_device():
             d.get("password", ""),
             d.get("sid_cookie", ""),
             uid(),
-            d.get("xsrf_token", "")
+            d.get("xsrf_token", ""),
+            platform  # ← nouveau paramètre
         )
         return {"status": "ok"}
     except Exception as e:
