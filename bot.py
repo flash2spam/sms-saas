@@ -187,7 +187,7 @@ _USER_AGENTS = {
     "iphone": (
         "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) "
         "AppleWebKit/605.1.15 (KHTML, like Gecko) "
-        "CriOS/124.0.0.0 Mobile/15E148 Safari/604.1"
+        "Version/17.4 Mobile/15E148 Safari/604.1"
     ),
     "mac": (
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
@@ -429,13 +429,13 @@ def delete_device(name, user_id):
 def send_textnow(phone, message, username, sid_cookie, xsrf_token="", platform="windows"):
     """
     Envoie un SMS via TextNow.
-    ✅ FIX PERIMETERX: curl_cffi imite le TLS fingerprint d'un vrai Chrome 124
+    ✅ FIX PERIMETERX: curl_cffi avec safari15_5 bypass le TLS fingerprint check
     """
     try:
         ua = get_user_agent(platform)
 
-        # ✅ impersonate="chrome124" bypass PerimeterX TLS fingerprint check
-        sess = requests.Session(impersonate="chrome124")
+        # ✅ safari15_5 bypass PerimeterX mieux que chrome124
+        sess = requests.Session(impersonate="safari15_5")
 
         cookie_header = f"connect.sid={sid_cookie.strip()}"
 
@@ -446,9 +446,6 @@ def send_textnow(phone, message, username, sid_cookie, xsrf_token="", platform="
             "Accept": "application/json, text/plain, */*",
             "Accept-Language": "en-US,en;q=0.9",
             "Cookie": cookie_header,
-            "sec-ch-ua": '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
-            "sec-ch-ua-mobile": "?1" if platform in ("android", "iphone") else "?0",
-            "sec-ch-ua-platform": f'"{platform.capitalize()}"',
             "sec-fetch-dest": "empty",
             "sec-fetch-mode": "cors",
             "sec-fetch-site": "same-origin",
@@ -555,13 +552,13 @@ def _cleanup_seen_ids(user_id, device_name, keep_last=500):
 
 def get_textnow_inbox(username, sid_cookie, platform="windows"):
     """
-    ✅ FIX PERIMETERX: curl_cffi imite le TLS fingerprint d'un vrai Chrome 124
+    ✅ FIX PERIMETERX: curl_cffi avec safari15_5
     """
     try:
         ua = get_user_agent(platform)
 
-        # ✅ impersonate="chrome124" bypass PerimeterX TLS fingerprint check
-        sess = requests.Session(impersonate="chrome124")
+        # ✅ safari15_5 bypass PerimeterX mieux que chrome124
+        sess = requests.Session(impersonate="safari15_5")
 
         cookie_header = f"connect.sid={sid_cookie.strip()}"
 
@@ -570,7 +567,6 @@ def get_textnow_inbox(username, sid_cookie, platform="windows"):
             "Referer": "https://www.textnow.com/messaging",
             "Accept": "application/json, text/plain, */*",
             "Cookie": cookie_header,
-            "sec-ch-ua-mobile": "?1" if platform in ("android", "iphone") else "?0",
         })
         r = sess.get(
             f"https://www.textnow.com/api/users/{username}/messages",
