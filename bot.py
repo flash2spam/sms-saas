@@ -1,7 +1,7 @@
 import sqlite3
 import threading
 import time
-import requests
+from curl_cffi import requests  # ✅ FIX PERIMETERX: remplace "import requests"
 import csv
 import os
 import random
@@ -429,15 +429,14 @@ def delete_device(name, user_id):
 def send_textnow(phone, message, username, sid_cookie, xsrf_token="", platform="windows"):
     """
     Envoie un SMS via TextNow.
-    FIX: Cookie envoyé directement dans le header HTTP pour éviter
-    les problèmes d'encodage/décodage avec requests.Session.cookies
+    ✅ FIX PERIMETERX: curl_cffi imite le TLS fingerprint d'un vrai Chrome 124
     """
     try:
         ua = get_user_agent(platform)
-        sess = requests.Session()
 
-        # ✅ FIX PRINCIPAL: Cookie envoyé directement dans le header
-        # au lieu de sess.cookies.set() qui cause des problèmes d'encodage
+        # ✅ impersonate="chrome124" bypass PerimeterX TLS fingerprint check
+        sess = requests.Session(impersonate="chrome124")
+
         cookie_header = f"connect.sid={sid_cookie.strip()}"
 
         sess.headers.update({
@@ -446,7 +445,7 @@ def send_textnow(phone, message, username, sid_cookie, xsrf_token="", platform="
             "Origin": "https://www.textnow.com",
             "Accept": "application/json, text/plain, */*",
             "Accept-Language": "en-US,en;q=0.9",
-            "Cookie": cookie_header,  # ✅ Cookie brut, pas touché
+            "Cookie": cookie_header,
             "sec-ch-ua": '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
             "sec-ch-ua-mobile": "?1" if platform in ("android", "iphone") else "?0",
             "sec-ch-ua-platform": f'"{platform.capitalize()}"',
@@ -457,10 +456,8 @@ def send_textnow(phone, message, username, sid_cookie, xsrf_token="", platform="
 
         print(f"🌐 Platform: {platform} | UA: {ua[:60]}...")
 
-        # GET /messaging pour récupérer le CSRF frais
         try:
             resp = sess.get("https://www.textnow.com/messaging", timeout=30)
-            # Récupérer le XSRF-TOKEN depuis les cookies de la réponse
             fresh_csrf_raw = resp.cookies.get("XSRF-TOKEN") or sess.cookies.get("XSRF-TOKEN")
         except Exception as e:
             print(f"⚠️  GET /messaging échoué: {e}")
@@ -558,20 +555,21 @@ def _cleanup_seen_ids(user_id, device_name, keep_last=500):
 
 def get_textnow_inbox(username, sid_cookie, platform="windows"):
     """
-    FIX: Cookie envoyé directement dans le header HTTP
+    ✅ FIX PERIMETERX: curl_cffi imite le TLS fingerprint d'un vrai Chrome 124
     """
     try:
         ua = get_user_agent(platform)
-        sess = requests.Session()
 
-        # ✅ FIX PRINCIPAL: même fix que send_textnow
+        # ✅ impersonate="chrome124" bypass PerimeterX TLS fingerprint check
+        sess = requests.Session(impersonate="chrome124")
+
         cookie_header = f"connect.sid={sid_cookie.strip()}"
 
         sess.headers.update({
             "User-Agent": ua,
             "Referer": "https://www.textnow.com/messaging",
             "Accept": "application/json, text/plain, */*",
-            "Cookie": cookie_header,  # ✅ Cookie brut, pas touché
+            "Cookie": cookie_header,
             "sec-ch-ua-mobile": "?1" if platform in ("android", "iphone") else "?0",
         })
         r = sess.get(
